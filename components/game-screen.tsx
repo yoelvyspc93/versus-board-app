@@ -24,7 +24,7 @@ export function GameScreen() {
           <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
             <Crown className="w-6 h-6 text-primary" />
           </div>
-          <h1 className="text-5xl font-bold tracking-tight">VersusBoard</h1>
+          <h1 className="text-3xl font-bold tracking-tight">VersusBoard</h1>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
