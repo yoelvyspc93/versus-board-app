@@ -24,7 +24,7 @@ export function Square({ position, isLight, isValidMove, isCapture, isPromotion,
         flex items-center justify-center
         transition-all duration-200
         ${isLight ? "bg-[#f5f1e8]" : "bg-[#c79a6b]"}
-        ${isValidMove || isCapture ? "cursor-pointer" : ""}
+        ${isValidMove || isCapture || hasPiece ? "cursor-pointer" : "cursor-default"}
       `}
       disabled={!isValidMove && !isCapture}
     >
