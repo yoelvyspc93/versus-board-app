@@ -29,12 +29,13 @@ export function Square({
     <button
       type="button"
       onClick={onClick}
+      data-position={`${position.row}-${position.col}`}
       className={`
         relative aspect-square w-full
         flex items-center justify-center
         transition-all duration-200
         ${isLight ? "bg-[#f5f1e8]" : "bg-[#c79a6b]"}
-        ${isValidMove || isCapture || hasPiece ? "cursor-pointer" : "cursor-default"}
+        ${isValidMove || isCapture || hasPiece ? "cursor-pointer hover:brightness-105" : "cursor-default"}
       `}
     >
       {isValidMove && !isCapture && (
@@ -46,9 +47,12 @@ export function Square({
       )}
 
       {isPromotion && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <Crown className="w-6 h-6 text-[#4ccb34] drop-shadow-lg" strokeWidth={3} />
-        </div>
+        <>
+          <div className="absolute inset-0 bg-[#7cff4b] opacity-40 pointer-events-none" />
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <Crown className="w-6 h-6 text-[#2f7d21] drop-shadow-lg" strokeWidth={3} />
+          </div>
+        </>
       )}
 
       <div className="relative w-4/5 h-4/5 flex items-center justify-center">

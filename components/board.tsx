@@ -12,56 +12,38 @@ export function Board() {
   const isFlippedForLocal = !!localPlayer && !!player1 && localPlayer.id === player1.id
 
   const handleSquareClick = (position: Position) => {
-    console.log("[v0] Square clicked:", position, "Local player:", localPlayer?.color, "Current turn:", currentTurn)
-
-    if (!localPlayer) {
-      console.log("[v0] No local player set")
-      return
-    }
-
-    if (currentTurn !== localPlayer.color) {
-      console.log("[v0] Not your turn. Current turn:", currentTurn, "Your color:", localPlayer.color)
-      return
-    }
+    if (!localPlayer) return
+    if (currentTurn !== localPlayer.color) return
 
     const pieceAtPosition = pieces.find((p) => p.position.row === position.row && p.position.col === position.col)
 
     if (selectedPiece) {
       const validMoves = getValidMoves(selectedPiece, pieces, localPlayer.color)
-      console.log("[v0] Valid moves for selected piece:", validMoves.length)
-
       const isValidMove = validMoves.some((m) => m.to.row === position.row && m.to.col === position.col)
 
       if (isValidMove) {
         const move = validMoves.find((m) => m.to.row === position.row && m.to.col === position.col)!
-        console.log("[v0] Making move:", move)
         movePiece(move)
         selectPiece(null)
       } else if (pieceAtPosition && pieceAtPosition.color === localPlayer.color) {
-        console.log("[v0] Selecting different piece")
         selectPiece(position)
       } else {
-        console.log("[v0] Deselecting piece")
         selectPiece(null)
       }
     } else if (pieceAtPosition && pieceAtPosition.color === localPlayer.color) {
-      console.log("[v0] Selecting new piece")
       selectPiece(position)
     }
   }
 
   const validMoves = selectedPiece ? getValidMoves(selectedPiece, pieces, localPlayer?.color || "dark") : []
 
-  if (selectedPiece && validMoves.length > 0) {
-    console.log("[v0] Highlighting", validMoves.length, "valid moves")
-  }
-
   return (
     <div className="w-full max-w-2xl mx-auto">
       <div
-        className="grid grid-cols-8 gap-0 border-4 border-[#6b5d56] rounded-lg overflow-hidden shadow-2xl"
+        className="grid grid-cols-8 gap-0 border-[6px] border-[#6b5d56] rounded-2xl overflow-hidden shadow-2xl bg-[#f0e4d4]"
         style={{
-          boxShadow: "0 20px 60px rgba(0,0,0,0.3), 0 0 0 1px rgba(107,93,86,0.2)",
+          boxShadow:
+            "0 26px 70px rgba(0,0,0,0.4), 0 0 0 1px rgba(107,93,86,0.25), 0 0 25px rgba(255,200,150,0.7)",
         }}
       >
         {Array.from({ length: 64 }).map((_, index) => {
@@ -75,13 +57,12 @@ export function Board() {
           const isLight = (row + col) % 2 === 0
 
           const piece = pieces.find((p) => p.position.row === row && p.position.col === col)
-
           const isSelected = selectedPiece?.row === row && selectedPiece?.col === col
 
           const validMove = validMoves.find((m) => m.to.row === row && m.to.col === col)
           const isValidMove = !!validMove
-          const isCapture = validMove?.capturedPieces && validMove.capturedPieces.length > 0
-          const isPromotion = validMove?.promotion || false
+          const isCapture = !!validMove?.capturedPieces && validMove!.capturedPieces.length > 0
+          const isPromotion = !!validMove?.promotion
 
           return (
             <Square
@@ -89,7 +70,7 @@ export function Board() {
               position={position}
               isLight={isLight}
               isValidMove={isValidMove}
-              isCapture={!!isCapture}
+              isCapture={isCapture}
               isPromotion={isPromotion}
               onClick={() => handleSquareClick(position)}
             >

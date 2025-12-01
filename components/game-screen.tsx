@@ -12,28 +12,26 @@ export function GameScreen() {
   const isMyTurn = localPlayer && currentTurn === localPlayer.color
   const currentPlayerName = currentTurn === player1?.color ? player1?.name : player2?.name
 
-  // Count pieces for each player
   const darkPieces = pieces.filter((p) => p.color === "dark").length
   const lightPieces = pieces.filter((p) => p.color === "light").length
   const player1Pieces = player1?.color === "dark" ? darkPieces : lightPieces
   const player2Pieces = player2?.color === "dark" ? darkPieces : lightPieces
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-background via-muted/30 to-background">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-2xl space-y-6">
-        {/* Header */}
         <div className="text-center space-y-2">
-          <h1 className="text-3xl font-bold flex items-center justify-center gap-2">
-            <Crown className="w-8 h-8 text-primary" />
+          <h1 className="text-3xl md:text-4xl font-extrabold flex items-center justify-center gap-2 text-white drop-shadow-[0_3px_10px_rgba(0,0,0,0.7)]">
+            <Crown className="w-8 h-8 text-[#ffe4b5]" />
             VersusBoard
           </h1>
         </div>
 
-        {/* Player Info */}
         <div className="grid grid-cols-2 gap-4">
-          {/* Player 1 */}
           <Card
-            className={`p-4 transition-all ${player1?.color === currentTurn && !winner ? "border-primary border-2 shadow-lg" : ""}`}
+            className={`p-4 transition-all bg-white/90 backdrop-blur-md shadow-xl border-none ${
+              player1?.color === currentTurn && !winner ? "ring-2 ring-[#ffd38c] shadow-[0_0_25px_rgba(255,211,140,0.6)]" : ""
+            }`}
           >
             <div className="space-y-2">
               <div className="flex items-center gap-2">
@@ -53,7 +51,9 @@ export function GameScreen() {
                 </div>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">{player1?.color === "dark" ? "Oscuras" : "Claras"}</span>
+                <span className="text-muted-foreground">
+                  {player1?.color === "dark" ? "Oscuras" : "Claras"}
+                </span>
                 <span className="font-semibold flex items-center gap-1">
                   <Users className="w-3 h-3" />
                   {player1Pieces}
@@ -62,9 +62,10 @@ export function GameScreen() {
             </div>
           </Card>
 
-          {/* Player 2 */}
           <Card
-            className={`p-4 transition-all ${player2?.color === currentTurn && !winner ? "border-primary border-2 shadow-lg" : ""}`}
+            className={`p-4 transition-all bg-white/90 backdrop-blur-md shadow-xl border-none ${
+              player2?.color === currentTurn && !winner ? "ring-2 ring-[#ffd38c] shadow-[0_0_25px_rgba(255,211,140,0.6)]" : ""
+            }`}
           >
             <div className="space-y-2">
               <div className="flex items-center gap-2">
@@ -84,7 +85,9 @@ export function GameScreen() {
                 </div>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">{player2?.color === "dark" ? "Oscuras" : "Claras"}</span>
+                <span className="text-muted-foreground">
+                  {player2?.color === "dark" ? "Oscuras" : "Claras"}
+                </span>
                 <span className="font-semibold flex items-center gap-1">
                   <Users className="w-3 h-3" />
                   {player2Pieces}
@@ -94,32 +97,29 @@ export function GameScreen() {
           </Card>
         </div>
 
-        {/* Turn Indicator */}
         {state === "in-progress" && !winner && (
-          <Card className="p-4 text-center bg-muted/50">
+          <Card className="p-4 text-center bg-white/90 backdrop-blur-md shadow-xl border-none">
             <p className="text-lg font-semibold">
-              Turno de: <span className="text-primary">{currentPlayerName}</span>
+              Turno de: <span className="text-[#d87a2f]">{currentPlayerName}</span>
               {isMyTurn && <span className="text-success ml-2">(Tu turno)</span>}
             </p>
           </Card>
         )}
 
-        {/* Board */}
         <Board />
 
-        {/* Winner */}
         {winner && (
-          <Card className="p-6 text-center bg-success/10 border-success">
+          <Card className="p-6 text-center bg-[#fff7ea] border-none shadow-2xl">
             <div className="space-y-4">
-              <Trophy className="w-16 h-16 mx-auto text-success" />
+              <Trophy className="w-16 h-16 mx-auto text-[#f5a623] drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]" />
               <div>
-                <p className="text-2xl font-bold text-success">¡Ganador: {winner.name}!</p>
+                <p className="text-2xl font-bold text-[#d87a2f]">¡Ganador: {winner.name}!</p>
                 <p className="text-sm text-muted-foreground mt-2">
                   {winner.name === localPlayer?.name ? "¡Felicitaciones!" : "Mejor suerte la próxima vez"}
                 </p>
               </div>
               <div className="flex gap-3 justify-center flex-wrap">
-                <Button onClick={resetGame} variant="outline">
+                <Button onClick={resetGame} variant="outline" className="bg-white/90 hover:bg-white">
                   Volver al inicio
                 </Button>
               </div>
@@ -127,27 +127,18 @@ export function GameScreen() {
           </Card>
         )}
 
-        {/* Instructions */}
-        <Card className="p-4 bg-muted/30">
+        <Card className="p-4 bg-white/85 backdrop-blur-md border-none shadow-lg">
           <div className="text-sm text-muted-foreground space-y-1">
             <p>
               <strong className="text-foreground">Cómo jugar:</strong>
             </p>
             <ul className="space-y-1 ml-4">
-              <li>• Haz clic en una pieza para seleccionarla</li>
-              <li>
-                • Los cuadros <span className="text-accent">azules</span> indican movimientos válidos
-              </li>
-              <li>
-                • Los cuadros <span className="text-success">verdes</span> indican capturas disponibles
-              </li>
-              <li>
-                • Las capturas son <strong className="text-foreground">obligatorias</strong> cuando están disponibles
-              </li>
-              <li>• Si capturas, puedes seguir capturando en el mismo turno</li>
-              <li>
-                • Llega al otro lado para <Crown className="w-3 h-3 inline" /> coronar tu pieza
-              </li>
+              <li>• Haz clic en una pieza para seleccionarla.</li>
+              <li>• Los cuadros azules indican movimientos válidos.</li>
+              <li>• Los cuadros verdes indican capturas disponibles.</li>
+              <li>• Las capturas son obligatorias cuando existen.</li>
+              <li>• Si capturas, puedes seguir capturando en el mismo turno.</li>
+              <li>• Llega al otro lado del tablero para coronar tu pieza.</li>
             </ul>
           </div>
         </Card>

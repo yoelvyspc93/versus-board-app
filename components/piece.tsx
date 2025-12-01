@@ -31,22 +31,20 @@ export function Piece({ piece, isSelected, onClick, isDisabled }: PieceProps) {
           : "radial-gradient(circle at 30% 30%, #a24826, #8b3b20)",
         border: `3px solid ${isLight ? "#d4c3a0" : "#6b2f1a"}`,
         boxShadow: isSelected
-          ? "0 8px 20px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.3)"
-          : "0 4px 12px rgba(0,0,0,0.3), inset 0 2px 4px rgba(255,255,255,0.2)",
+          ? "0 8px 20px rgba(0,0,0,0.45), 0 0 18px rgba(255,200,150,0.6), inset 0 2px 4px rgba(255,255,255,0.3)"
+          : "0 4px 14px rgba(0,0,0,0.35), inset 0 2px 4px rgba(255,255,255,0.2)",
       }}
       initial={false}
       animate={isKing ? { scale: [1, 1.2, 1] } : {}}
       transition={{ duration: 0.3 }}
     >
-      {/* Spiral relief effect */}
       <div
         className="absolute inset-0 rounded-full opacity-30"
         style={{
-          background: `conic-gradient(from 0deg, transparent 0deg, ${isLight ? "#fff" : "#fff"} 90deg, transparent 180deg)`,
+          background: `conic-gradient(from 0deg, transparent 0deg, #ffffff 90deg, transparent 180deg)`,
         }}
       />
 
-      {/* King crown */}
       {isKing && (
         <motion.div
           className="absolute inset-0 flex items-center justify-center"

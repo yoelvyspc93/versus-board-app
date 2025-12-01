@@ -37,7 +37,6 @@ export function LobbyScreen() {
   const canCreate = state === "no-game" && !!playerName.trim()
   const canJoin =
     !!playerName.trim() &&
-    state === "waiting-player" &&
     !isJoining
 
   return (
