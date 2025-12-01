@@ -97,14 +97,14 @@ export function GameScreen() {
           </Card>
         </div>
 
-        {state === "in-progress" && !winner && (
+        {/* {state === "in-progress" && !winner && (
           <Card className="p-4 text-center bg-white/90 backdrop-blur-md shadow-xl border-none">
             <p className="text-lg font-semibold">
               Turno de: <span className="text-[#d87a2f]">{currentPlayerName}</span>
               {isMyTurn && <span className="text-success ml-2">(Tu turno)</span>}
             </p>
           </Card>
-        )}
+        )} */}
 
         <Board />
 
