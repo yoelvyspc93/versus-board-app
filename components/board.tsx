@@ -7,7 +7,9 @@ import type { Position } from "@/lib/types"
 import { getValidMoves } from "@/lib/checkers-logic"
 
 export function Board() {
-  const { pieces, selectedPiece, selectPiece, currentTurn, localPlayer, movePiece } = useGameStore()
+  const { pieces, selectedPiece, selectPiece, currentTurn, localPlayer, movePiece, player1 } = useGameStore()
+
+  const isFlippedForLocal = !!localPlayer && !!player1 && localPlayer.id === player1.id
 
   const handleSquareClick = (position: Position) => {
     console.log("[v0] Square clicked:", position, "Local player:", localPlayer?.color, "Current turn:", currentTurn)
@@ -63,8 +65,12 @@ export function Board() {
         }}
       >
         {Array.from({ length: 64 }).map((_, index) => {
-          const row = Math.floor(index / 8)
-          const col = index % 8
+          const uiRow = Math.floor(index / 8)
+          const uiCol = index % 8
+
+          const row = isFlippedForLocal ? 7 - uiRow : uiRow
+          const col = isFlippedForLocal ? 7 - uiCol : uiCol
+
           const position: Position = { row, col }
           const isLight = (row + col) % 2 === 0
 
@@ -92,7 +98,9 @@ export function Board() {
                   piece={piece}
                   isSelected={isSelected}
                   onClick={() => handleSquareClick(position)}
-                  isDisabled={!localPlayer || piece.color !== localPlayer.color || currentTurn !== localPlayer.color}
+                  isDisabled={
+                    !localPlayer || piece.color !== localPlayer.color || currentTurn !== localPlayer.color
+                  }
                 />
               )}
             </Square>
