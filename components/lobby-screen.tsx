@@ -39,7 +39,7 @@ export function LobbyScreen() {
             </div>
           </div>
           <h1 className="text-5xl font-bold tracking-tight text-balance">VersusBoard</h1>
-          <p className="text-muted-foreground text-lg">Juego en Tiempo Real</p>
+          <p className="text-muted-foreground text-lg">Juego en tiempo real</p>
         </div>
 
         {/* Player Name Input */}
