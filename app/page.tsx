@@ -7,8 +7,6 @@ import { GameScreen } from "@/components/game-screen"
 export default function Home() {
   const { state } = useGameStore()
 
-  return <GameScreen />
-
   if (state === "no-game" || state === "waiting-player") {
     return <LobbyScreen />
   }
