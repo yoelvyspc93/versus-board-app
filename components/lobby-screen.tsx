@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { useGameStore } from "@/lib/store"
-import { Crown } from "lucide-react"
+import { Crown, Castle } from "lucide-react"
 
 export function LobbyScreen() {
   const [playerName, setPlayerName] = useState("")
@@ -68,7 +68,7 @@ export function LobbyScreen() {
             </Card>
             <Card className="p-4 border opacity-50 cursor-not-allowed">
               <div className="text-center space-y-1">
-                <div className="w-8 h-8 mx-auto bg-muted rounded" />
+                <Castle className="w-8 h-8 mx-auto text-primary" />
                 <p className="font-semibold text-sm">Ajedrez</p>
                 <p className="text-xs text-muted-foreground">Próximamente</p>
               </div>

@@ -1,16 +1,16 @@
 import type { Position, Piece, Move, PlayerColor } from "./types"
 
-// Helper to check if position is on board
+// Helper: check if a position is inside the board
 function isValidPosition(pos: Position): boolean {
   return pos.row >= 0 && pos.row < 8 && pos.col >= 0 && pos.col < 8
 }
 
-// Helper to get piece at position
+// Helper: get piece at a given position
 function getPieceAt(position: Position, pieces: Piece[]): Piece | undefined {
   return pieces.find((p) => p.position.row === position.row && p.position.col === position.col)
 }
 
-// Check if a position would result in promotion (reaching opposite end)
+// Helper: check if a move promotes a man to king
 function isPromotionMove(from: Position, to: Position, color: PlayerColor, pieces: Piece[]): boolean {
   const piece = getPieceAt(from, pieces)
   if (!piece || piece.type === "king") return false
@@ -22,102 +22,161 @@ function isPromotionMove(from: Position, to: Position, color: PlayerColor, piece
   return false
 }
 
-// Get all possible capture moves for a piece
+// Get all capture moves for a piece located at `position`
 function getCaptureMoves(position: Position, pieces: Piece[], playerColor: PlayerColor): Move[] {
   const piece = getPieceAt(position, pieces)
-  if (!piece) return []
+  if (!piece || piece.color !== playerColor) return []
 
   const captures: Move[] = []
-  const directions =
-    piece.type === "king"
-      ? [
-          [-1, -1],
-          [-1, 1],
-          [1, -1],
-          [1, 1],
-        ] // Kings can move in all diagonal directions
-      : playerColor === "dark"
-        ? [
-            [1, -1],
-            [1, 1],
-          ] // Dark pieces move down (increasing row)
-        : [
-            [-1, -1],
-            [-1, 1],
-          ] // Light pieces move up (decreasing row)
+
+  // Regular men
+  if (piece.type === "normal") {
+    // En damas internacionales, el peón puede capturar en las 4 diagonales
+    const directions: Array<[number, number]> = [
+      [1, 1],
+      [1, -1],
+      [-1, 1],
+      [-1, -1],
+    ]
+
+    for (const [dr, dc] of directions) {
+      const mid: Position = { row: position.row + dr, col: position.col + dc }
+      const land: Position = { row: position.row + 2 * dr, col: position.col + 2 * dc }
+
+      if (!isValidPosition(mid) || !isValidPosition(land)) continue
+
+      const midPiece = getPieceAt(mid, pieces)
+      const landPiece = getPieceAt(land, pieces)
+
+      if (midPiece && midPiece.color !== piece.color && !landPiece) {
+        const promotion = isPromotionMove(position, land, piece.color, pieces)
+        captures.push({
+          from: position,
+          to: land,
+          capturedPieces: [mid],
+          promotion,
+        })
+      }
+    }
+
+    return captures
+  }
+
+  // Kings (long-range, "dama internacional")
+  const directions: Array<[number, number]> = [
+    [1, 1],
+    [1, -1],
+    [-1, 1],
+    [-1, -1],
+  ]
 
   for (const [dr, dc] of directions) {
-    const jumpOver: Position = {
-      row: position.row + dr,
-      col: position.col + dc,
-    }
-    const landOn: Position = {
-      row: position.row + dr * 2,
-      col: position.col + dc * 2,
-    }
+    let r = position.row + dr
+    let c = position.col + dc
+    let enemyPos: Position | null = null
 
-    if (!isValidPosition(landOn)) continue
+    while (isValidPosition({ row: r, col: c })) {
+      const current: Position = { row: r, col: c }
+      const currentPiece = getPieceAt(current, pieces)
 
-    const pieceToJump = getPieceAt(jumpOver, pieces)
-    const pieceAtLanding = getPieceAt(landOn, pieces)
+      if (!currentPiece) {
+        // Empty square
+        if (enemyPos) {
+          // Ya saltamos una pieza enemiga; cualquier casilla vacía después es válida para caer
+          captures.push({
+            from: position,
+            to: { ...current },
+            capturedPieces: [enemyPos],
+            promotion: false, // la dama ya es dama
+          })
+        }
 
-    // Can capture if there's an opponent piece to jump and landing is empty
-    if (pieceToJump && pieceToJump.color !== playerColor && !pieceAtLanding) {
-      const promotion = isPromotionMove(position, landOn, playerColor, pieces)
+        r += dr
+        c += dc
+        continue
+      }
 
-      captures.push({
-        from: position,
-        to: landOn,
-        capturedPieces: [jumpOver],
-        promotion,
-      })
+      // Pieza propia: bloquea el camino
+      if (currentPiece.color === piece.color) {
+        enemyPos = null
+        break
+      }
+
+      // Pieza enemiga
+      if (!enemyPos) {
+        enemyPos = { ...current }
+        r += dr
+        c += dc
+        continue
+      }
+
+      // Segunda pieza enemiga en la misma diagonal: no se puede saltar
+      enemyPos = null
+      break
     }
   }
 
   return captures
 }
 
-// Get all possible regular (non-capture) moves for a piece
+// Get all regular (non-capture) moves for a piece at `position`
 function getRegularMoves(position: Position, pieces: Piece[], playerColor: PlayerColor): Move[] {
   const piece = getPieceAt(position, pieces)
-  if (!piece) return []
+  if (!piece || piece.color !== playerColor) return []
 
   const moves: Move[] = []
-  const directions =
-    piece.type === "king"
-      ? [
-          [-1, -1],
-          [-1, 1],
-          [1, -1],
-          [1, 1],
-        ]
-      : playerColor === "dark"
-        ? [
-            [1, -1],
-            [1, 1],
-          ]
-        : [
-            [-1, -1],
-            [-1, 1],
-          ]
 
-  for (const [dr, dc] of directions) {
-    const newPos: Position = {
-      row: position.row + dr,
-      col: position.col + dc,
+  if (piece.type === "normal") {
+    const forwardDir = piece.color === "dark" ? 1 : -1
+    const directions: Array<[number, number]> = [
+      [forwardDir, -1],
+      [forwardDir, 1],
+    ]
+
+    for (const [dr, dc] of directions) {
+      const dest: Position = { row: position.row + dr, col: position.col + dc }
+      if (!isValidPosition(dest)) continue
+
+      const destPiece = getPieceAt(dest, pieces)
+      if (!destPiece) {
+        const promotion = isPromotionMove(position, dest, piece.color, pieces)
+        moves.push({
+          from: position,
+          to: dest,
+          promotion,
+        })
+      }
     }
 
-    if (!isValidPosition(newPos)) continue
+    return moves
+  }
 
-    const pieceAtNew = getPieceAt(newPos, pieces)
-    if (!pieceAtNew) {
-      const promotion = isPromotionMove(position, newPos, playerColor, pieces)
+  // Kings: movimiento libre por diagonales hasta que algo bloquee
+  const directions: Array<[number, number]> = [
+    [1, 1],
+    [1, -1],
+    [-1, 1],
+    [-1, -1],
+  ]
+
+  for (const [dr, dc] of directions) {
+    let r = position.row + dr
+    let c = position.col + dc
+
+    while (isValidPosition({ row: r, col: c })) {
+      const dest: Position = { row: r, col: c }
+      const destPiece = getPieceAt(dest, pieces)
+
+      if (destPiece) break
 
       moves.push({
         from: position,
-        to: newPos,
-        promotion,
+        to: dest,
+        promotion: false,
       })
+
+      r += dr
+      c += dc
     }
   }
 
@@ -127,10 +186,9 @@ function getRegularMoves(position: Position, pieces: Piece[], playerColor: Playe
 // Check if any piece of the player can capture
 export function hasAnyCaptures(pieces: Piece[], playerColor: PlayerColor): boolean {
   for (const piece of pieces) {
-    if (piece.color === playerColor) {
-      const captures = getCaptureMoves(piece.position, pieces, playerColor)
-      if (captures.length > 0) return true
-    }
+    if (piece.color !== playerColor) continue
+    const captures = getCaptureMoves(piece.position, pieces, playerColor)
+    if (captures.length > 0) return true
   }
   return false
 }
@@ -140,50 +198,49 @@ export function getValidMoves(position: Position, pieces: Piece[], playerColor: 
   const piece = getPieceAt(position, pieces)
   if (!piece || piece.color !== playerColor) return []
 
-  const captures = getCaptureMoves(position, pieces, playerColor)
+  const mustCapture = hasAnyCaptures(pieces, playerColor)
 
-  // If this piece can capture, return only captures
-  if (captures.length > 0) return captures
+  const captureMoves = getCaptureMoves(position, pieces, playerColor)
+  if (mustCapture) {
+    return captureMoves
+  }
 
-  // If ANY piece can capture, no regular moves allowed
-  if (hasAnyCaptures(pieces, playerColor)) return []
-
-  // Otherwise return regular moves
   return getRegularMoves(position, pieces, playerColor)
 }
 
-// Check for continuous captures after a move
+// Get possible continuous captures after a capture move
 export function getContinuousCaptures(position: Position, pieces: Piece[], playerColor: PlayerColor): Move[] {
   return getCaptureMoves(position, pieces, playerColor)
 }
 
-// Check if a player has any valid moves
-export function hasValidMoves(pieces: Piece[], playerColor: PlayerColor): boolean {
-  for (const piece of pieces) {
-    if (piece.color === playerColor) {
-      const moves = getValidMoves(piece.position, pieces, playerColor)
-      if (moves.length > 0) return true
-    }
-  }
-  return false
-}
-
-// Check if a player has lost (no pieces or no valid moves)
+// Check if a player has lost (no pieces or no legal moves)
 export function hasPlayerLost(pieces: Piece[], playerColor: PlayerColor): boolean {
-  const playerPieces = pieces.filter((p) => p.color === playerColor)
-  if (playerPieces.length === 0) return true
-  return !hasValidMoves(pieces, playerColor)
+  const hasPieces = pieces.some((p) => p.color === playerColor)
+  if (!hasPieces) return true
+
+  // Si tiene alguna captura posible, no ha perdido
+  if (hasAnyCaptures(pieces, playerColor)) return false
+
+  // Si no tiene capturas, miramos movimientos normales
+  for (const piece of pieces) {
+    if (piece.color !== playerColor) continue
+    const moves = getRegularMoves(piece.position, pieces, playerColor)
+    if (moves.length > 0) return false
+  }
+
+  return true
 }
 
-// Apply a move and return the new pieces array
+// Apply a move to the board and return the new pieces array
 export function applyMove(move: Move, pieces: Piece[]): Piece[] {
   let newPieces = pieces.map((piece) => {
-    // Move the piece
     if (piece.position.row === move.from.row && piece.position.col === move.from.col) {
+      const promotion = move.promotion ?? isPromotionMove(move.from, move.to, piece.color, pieces)
+
       return {
         ...piece,
-        position: move.to,
-        type: move.promotion ? "king" : piece.type,
+        position: { ...move.to },
+        type: promotion ? ("king" as const) : piece.type,
       }
     }
     return piece
@@ -192,7 +249,9 @@ export function applyMove(move: Move, pieces: Piece[]): Piece[] {
   // Remove captured pieces
   if (move.capturedPieces && move.capturedPieces.length > 0) {
     newPieces = newPieces.filter((piece) => {
-      return !move.capturedPieces!.some((cap) => cap.row === piece.position.row && cap.col === piece.position.col)
+      return !move.capturedPieces!.some(
+        (cap) => cap.row === piece.position.row && cap.col === piece.position.col,
+      )
     })
   }
 
