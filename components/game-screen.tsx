@@ -3,7 +3,7 @@
 import { useGameStore } from "@/lib/store"
 import { Board } from "./board"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
+import { Card, CardTitle } from "@/components/ui/card"
 import { Crown, Trophy, Users } from "lucide-react"
 
 export function GameScreen() {
@@ -20,11 +20,11 @@ export function GameScreen() {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-2xl space-y-6">
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl md:text-4xl font-extrabold flex items-center justify-center gap-2 text-white drop-shadow-[0_3px_10px_rgba(0,0,0,0.7)]">
-            <Crown className="w-8 h-8 text-[#ffe4b5]" />
-            VersusBoard
-          </h1>
+        <div className="flex items-center justify-center gap-3">
+          <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+            <Crown className="w-6 h-6 text-primary" />
+          </div>
+          <h1 className="text-5xl font-bold tracking-tight">VersusBoard</h1>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -45,8 +45,8 @@ export function GameScreen() {
                     borderColor: player1?.color === "dark" ? "#6b2f1a" : "#d4c3a0",
                   }}
                 />
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold truncate">{player1?.name}</p>
+                <div className="flex-1 min-w-0 flex items-center gap-1">
+                  <p className="font-semibold truncate">{player1?.name ?? "Jugador"}</p>
                   {localPlayer?.name === player1?.name && <span className="text-xs text-muted-foreground">(Tú)</span>}
                 </div>
               </div>
@@ -79,8 +79,8 @@ export function GameScreen() {
                     borderColor: player2?.color === "dark" ? "#6b2f1a" : "#d4c3a0",
                   }}
                 />
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold truncate">{player2?.name}</p>
+                <div className="flex-1 min-w-0 flex items-center gap-1">
+                  <p className="font-semibold truncate">{player2?.name ?? "Jugador"}</p>
                   {localPlayer?.name === player2?.name && <span className="text-xs text-muted-foreground">(Tú)</span>}
                 </div>
               </div>
@@ -128,17 +128,15 @@ export function GameScreen() {
         )}
 
         <Card className="p-4 bg-white/85 backdrop-blur-md border-none shadow-lg">
-          <div className="text-sm text-muted-foreground space-y-1">
-            <p>
-              <strong className="text-foreground">Cómo jugar:</strong>
-            </p>
-            <ul className="space-y-1 ml-4">
-              <li>• Haz clic en una pieza para seleccionarla.</li>
-              <li>• Los cuadros azules indican movimientos válidos.</li>
-              <li>• Los cuadros verdes indican capturas disponibles.</li>
-              <li>• Las capturas son obligatorias cuando existen.</li>
-              <li>• Si capturas, puedes seguir capturando en el mismo turno.</li>
-              <li>• Llega al otro lado del tablero para coronar tu pieza.</li>
+          <CardTitle>Cómo jugar:</CardTitle>
+          <div className="text-sm text-muted-foreground">
+            <ul className="list-disc list-inside space-y-1 ml-4">
+              <li>Haz clic en una pieza para seleccionarla.</li>
+              <li>Los cuadros azules indican movimientos válidos.</li>
+              <li>Los cuadros verdes indican capturas disponibles.</li>
+              <li>Las capturas son obligatorias cuando existen.</li>
+              <li>Si capturas, puedes seguir capturando en el mismo turno.</li>
+              <li>Llega al otro lado del tablero para coronar tu pieza.</li>
             </ul>
           </div>
         </Card>

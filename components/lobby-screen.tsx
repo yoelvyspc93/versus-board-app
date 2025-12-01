@@ -45,12 +45,11 @@ export function LobbyScreen() {
         {/* Header */}
         <div className="text-center space-y-2">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <Crown className="w-6 h-6 text-primary" />
+            <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center">
+              <Crown className="w-12 h-12 text-primary" />
             </div>
           </div>
           <h1 className="text-5xl font-bold tracking-tight text-balance">VersusBoard</h1>
-          <p className="text-muted-foreground text-lg">Juego en tiempo real</p>
         </div>
 
         {/* Player Name Input */}
