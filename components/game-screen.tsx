@@ -9,7 +9,7 @@ import { Crown, Trophy, Users } from "lucide-react"
 export function GameScreen() {
   const { player1, player2, currentTurn, localPlayer, winner, state, pieces, resetGame } = useGameStore()
 
-  const isMyTurn = localPlayer && currentTurn === localPlayer.color
+  const isMyTurn = true//localPlayer && currentTurn === localPlayer.color
   const currentPlayerName = currentTurn === player1?.color ? player1?.name : player2?.name
 
   const darkPieces = pieces.filter((p) => p.color === "dark").length
@@ -30,7 +30,7 @@ export function GameScreen() {
         <div className="grid grid-cols-2 gap-4">
           <Card
             className={`p-4 transition-all bg-white/90 backdrop-blur-md shadow-xl border-none ${
-              player1?.color === currentTurn && !winner ? "ring-2 ring-[#ffd38c] shadow-[0_0_25px_rgba(255,211,140,0.6)]" : ""
+              player1?.color === currentTurn && !winner ? "border-2 border-primary shadow-[0_0_25px_rgba(255,211,140,0.6)]" : ""
             }`}
           >
             <div className="space-y-2">
@@ -106,17 +106,12 @@ export function GameScreen() {
           </Card>
         )} */}
 
-        <Board />
-
         {winner && (
           <Card className="p-6 text-center bg-[#fff7ea] border-none shadow-2xl">
             <div className="space-y-4">
               <Trophy className="w-16 h-16 mx-auto text-[#f5a623] drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]" />
               <div>
                 <p className="text-2xl font-bold text-[#d87a2f]">¡Ganador: {winner.name}!</p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  {winner.name === localPlayer?.name ? "¡Felicitaciones!" : "Mejor suerte la próxima vez"}
-                </p>
               </div>
               <div className="flex gap-3 justify-center flex-wrap">
                 <Button onClick={resetGame} variant="outline" className="bg-white/90 hover:bg-white">
@@ -126,6 +121,8 @@ export function GameScreen() {
             </div>
           </Card>
         )}
+
+        <Board />
 
         <Card className="p-4 bg-white/85 backdrop-blur-md border-none shadow-lg">
           <CardTitle>Cómo jugar:</CardTitle>
