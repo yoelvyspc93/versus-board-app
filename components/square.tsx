@@ -16,6 +16,8 @@ interface SquareProps {
 }
 
 export function Square({ position, isLight, isValidMove, isCapture, isPromotion, onClick, children }: SquareProps) {
+  const hasPiece = !!children
+  
   return (
     <button
       onClick={onClick}
