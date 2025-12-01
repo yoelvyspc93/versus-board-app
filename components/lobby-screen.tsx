@@ -9,6 +9,7 @@ import { Crown, Castle } from "lucide-react"
 
 export function LobbyScreen() {
   const [playerName, setPlayerName] = useState("")
+  const [isJoining, setIsJoining] = useState(false)
 
   const { state, createGame, joinGame } = useGameStore()
 
@@ -20,13 +21,24 @@ export function LobbyScreen() {
 
   const handleJoinGame = async () => {
     if (!playerName.trim()) return
-    useGameStore.getState().setPlayerName(playerName)
-    await joinGame()
+
+    setIsJoining(true)
+    try {
+      useGameStore.getState().setPlayerName(playerName)
+      await joinGame()
+    } catch (e) {
+      console.error("[VersusBoard] Error al unirse:", e)
+      setIsJoining(false)
+    }
   }
 
-  const canCreate = playerName.trim() && state === "no-game"
-  const canJoin = playerName.trim() && state === "no-game"
   const isWaitingForPlayer = state === "waiting-player"
+
+  const canCreate = state === "no-game" && !!playerName.trim()
+  const canJoin =
+    !!playerName.trim() &&
+    state === "waiting-player" &&
+    !isJoining
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-background via-muted/30 to-background">
@@ -50,7 +62,7 @@ export function LobbyScreen() {
             placeholder="Escribe tu nombre"
             value={playerName}
             onChange={(e) => setPlayerName(e.target.value)}
-            disabled={state !== "no-game"}
+            disabled={state !== "no-game" && state !== "waiting-player"}
             className="h-12 text-base"
           />
         </div>
@@ -77,7 +89,7 @@ export function LobbyScreen() {
         </div>
 
         {/* Action Buttons */}
-        {!isWaitingForPlayer && (
+        {!isWaitingForPlayer && !isJoining && (
           <div className="space-y-3">
             <Button
               onClick={handleCreateGame}
@@ -101,7 +113,7 @@ export function LobbyScreen() {
         )}
 
         {/* Waiting for Player 2 */}
-        {isWaitingForPlayer && (
+        {isWaitingForPlayer && !isJoining && (
           <Card className="p-6 bg-muted/50 border-2 border-dashed">
             <div className="text-center space-y-4">
               <div className="flex items-center justify-center">
@@ -114,6 +126,24 @@ export function LobbyScreen() {
                 </p>
               </div>
               <Button onClick={() => useGameStore.getState().resetGame()} variant="outline" size="sm">
+                Cancelar
+              </Button>
+            </div>
+          </Card>
+        )}
+
+        {/* Loading while joining */}
+        {isJoining && (
+          <Card className="p-6 bg-muted/50 border-2 border-dashed">
+            <div className="text-center space-y-4">
+              <div className="flex items-center justify-center">
+                <div className="w-12 h-12 rounded-full border-4 border-primary border-t-transparent animate-spin" />
+              </div>
+              <div className="space-y-2">
+                <p className="font-semibold text-lg">Uniéndote a la partida...</p>
+                <p className="text-sm text-muted-foreground">Conectando con el Jugador 1</p>
+              </div>
+              <Button onClick={() => setIsJoining(false)} variant="outline" size="sm">
                 Cancelar
               </Button>
             </div>
