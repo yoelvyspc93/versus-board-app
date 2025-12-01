@@ -122,32 +122,6 @@
     @apply border-border outline-ring/50;
   }
   body {
-    /* Vibrant red gradient background like the reference image */
-    background: linear-gradient(135deg, #dc143c 0%, #ff4444 25%, #ff6b6b 50%, #ff4444 75%, #dc143c 100%);
-    @apply text-foreground;
-    min-height: 100vh;
-  }
-
-  /* Add sparkle animation for floating effects */
-  @keyframes sparkle {
-    0%,
-    100% {
-      opacity: 0;
-      transform: scale(0);
-    }
-    50% {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
-  @keyframes float {
-    0%,
-    100% {
-      transform: translateY(0px);
-    }
-    50% {
-      transform: translateY(-20px);
-    }
+    @apply bg-background text-foreground;
   }
 }
