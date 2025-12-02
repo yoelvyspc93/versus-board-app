@@ -1,196 +1,296 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card } from "@/components/ui/card"
-import { useGameStore } from "@/lib/store"
-import { Crown, Castle, Sword, Cat } from "lucide-react"
-import type { GameType } from "@/lib/common/types"
+import { useState, useEffect } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Card } from '@/components/ui/card'
+import { useGameStore } from '@/lib/store'
+import {
+	Crown,
+	Radio,
+	Users,
+	ArrowRight,
+	LogIn,
+	Plus,
+	RefreshCw,
+	Search,
+} from 'lucide-react'
 
 export function LobbyScreen() {
-  const [playerName, setPlayerName] = useState("")
-  const [isJoining, setIsJoining] = useState(false)
-  const [selectedGame, setSelectedGame] = useState<GameType>("checkers")
+	// Local UI state
+	const [view, setView] = useState<'welcome' | 'lobby'>('welcome')
+	const [mode, setMode] = useState<'create' | 'join'>('create')
+	const [playerName, setPlayerName] = useState('')
+	const [roomName, setRoomName] = useState('')
+	const [isProcessing, setIsProcessing] = useState(false)
 
-  const { state, createGame, joinGame, setGameType } = useGameStore()
+	const {
+		createRoom,
+		joinRoom,
+		setPlayerName: storeSetPlayerName,
+		availableRooms,
+		fetchRooms,
+	} = useGameStore()
 
-  const handleCreateGame = async () => {
-    if (!playerName.trim()) return
-    useGameStore.getState().setPlayerName(playerName)
-    setGameType(selectedGame)
-    await createGame()
-  }
+	// Refresh rooms when entering "join" mode or periodically
+	useEffect(() => {
+		if (mode === 'join' && view === 'lobby') {
+			fetchRooms()
+			const interval = setInterval(fetchRooms, 5000) // Auto refresh every 5s
+			return () => clearInterval(interval)
+		}
+	}, [mode, view, fetchRooms])
 
-  const handleJoinGame = async () => {
-    if (!playerName.trim()) return
+	const handleConnect = () => {
+		setView('lobby')
+	}
 
-    setIsJoining(true)
-    try {
-      useGameStore.getState().setPlayerName(playerName)
-      await joinGame()
-    } catch (e) {
-      console.error("[VersusBoard] Error al unirse:", e)
-      setIsJoining(false)
-    }
-  }
+	const handleSubmit = async () => {
+		if (!playerName.trim() || !roomName.trim()) return
 
-  const isWaitingForPlayer = state === "waiting-player"
+		setIsProcessing(true)
+		storeSetPlayerName(playerName)
 
-  const canCreate = state === "no-game" && !!playerName.trim()
-  const canJoin = !!playerName.trim() && !isJoining
+		try {
+			if (mode === 'create') {
+				await createRoom(roomName)
+			} else {
+				await joinRoom(roomName)
+			}
+		} catch (e) {
+			console.error(e)
+			setIsProcessing(false)
+		}
+	}
 
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-background via-muted/30 to-background">
-      <div className="w-full max-w-md space-y-4">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-              <Crown className="w-12 h-12 text-primary" />
-            </div>
-          </div>
-          <h1 className="text-4xl font-bold tracking-tight text-balance">VersusBoard</h1>
-        </div>
+	const handleJoinSpecificRoom = async (selectedRoomName: string) => {
+		if (!playerName.trim()) {
+			alert('Por favor ingresa tu nombre primero')
+			return
+		}
 
-        {/* Player Name Input */}
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-foreground">Tu Nombre</label>
-          <Input
-            type="text"
-            placeholder="Escribe tu nombre"
-            value={playerName}
-            onChange={(e) => setPlayerName(e.target.value)}
-            disabled={state !== "no-game" && state !== "waiting-player"}
-            className="h-12 text-base"
-          />
-        </div>
+		setIsProcessing(true)
+		storeSetPlayerName(playerName)
+		setRoomName(selectedRoomName)
 
-        {/* Game Selection */}
-        <div className="space-y-3">
-          <label className="text-sm font-medium text-foreground">Selecciona el juego</label>
-          <div className="grid grid-cols-2 gap-3">
-            {/* Checkers */}
-            <Card
-              onClick={() => setSelectedGame("checkers")}
-              className={`p-4 border-2 cursor-pointer hover:bg-primary/10 transition-colors ${
-                selectedGame === "checkers" ? "border-primary bg-primary/5" : "border-border"
-              }`}
-            >
-              <div className="text-center space-y-1">
-                <Crown
-                  className={`w-8 h-8 mx-auto ${selectedGame === "checkers" ? "text-primary" : "text-muted-foreground"}`}
-                />
-                <p className="font-semibold text-sm">Damas</p>
-                {selectedGame === "checkers" && <p className="text-xs text-primary">Seleccionado</p>}
-              </div>
-            </Card>
+		try {
+			await joinRoom(selectedRoomName)
+		} catch (e) {
+			console.error(e)
+			setIsProcessing(false)
+		}
+	}
 
-            {/* Come-Come */}
-            <Card
-              onClick={() => setSelectedGame("come-come")}
-              className={`p-4 border-2 cursor-pointer hover:bg-primary/10 transition-colors ${
-                selectedGame === "come-come" ? "border-primary bg-primary/5" : "border-border"
-              }`}
-            >
-              <div className="text-center space-y-1">
-                <Sword
-                  className={`w-8 h-8 mx-auto ${selectedGame === "come-come" ? "text-primary" : "text-muted-foreground"}`}
-                />
-                <p className="font-semibold text-sm">Come-Come</p>
-                {selectedGame === "come-come" && <p className="text-xs text-primary">Seleccionado</p>}
-              </div>
-            </Card>
+	// Filter rooms
+	const filteredRooms = availableRooms.filter((room) =>
+		room.name.toLowerCase().includes(roomName.toLowerCase())
+	)
 
-            {/* Cat and Mouse */}
-            <Card
-              onClick={() => setSelectedGame("cat-and-mouse")}
-              className={`p-4 border-2 cursor-pointer hover:bg-primary/10 transition-colors ${
-                selectedGame === "cat-and-mouse" ? "border-primary bg-primary/5" : "border-border"
-              }`}
-            >
-              <div className="text-center space-y-1">
-                <Cat
-                  className={`w-8 h-8 mx-auto ${selectedGame === "cat-and-mouse" ? "text-primary" : "text-muted-foreground"}`}
-                />
-                <p className="font-semibold text-sm">Gato y Ratón</p>
-                {selectedGame === "cat-and-mouse" && <p className="text-xs text-primary">Seleccionado</p>}
-              </div>
-            </Card>
+	if (view === 'welcome') {
+		return (
+			<div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-slate-900 to-slate-800 text-white">
+				<div className="max-w-md w-full text-center space-y-8 animate-in fade-in zoom-in duration-500">
+					<div className="flex justify-center">
+						<div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(59,130,246,0.5)]">
+							<Crown className="w-12 h-12 text-white" />
+						</div>
+					</div>
 
-            {/* Chess - Coming Soon */}
-            <Card className="p-4 border opacity-50 cursor-not-allowed">
-              <div className="text-center space-y-1">
-                <Castle className="w-8 h-8 mx-auto text-muted-foreground" />
-                <p className="font-semibold text-sm">Ajedrez</p>
-                <p className="text-xs text-muted-foreground">Próximamente</p>
-              </div>
-            </Card>
-          </div>
-        </div>
+					<div className="space-y-2">
+						<h1 className="text-5xl font-extrabold tracking-tight">
+							VersusBoard
+						</h1>
+						<p className="text-slate-400 text-lg">
+							Plataforma de Juegos de Mesa Multijugador
+						</p>
+					</div>
 
-        {/* Action Buttons */}
-        {!isWaitingForPlayer && !isJoining && (
-          <div className="space-y-3">
-            <Button
-              onClick={handleCreateGame}
-              disabled={!canCreate}
-              className="w-full h-12 text-base font-semibold"
-              size="lg"
-            >
-              Crear Partida
-            </Button>
+					<div className="pt-8">
+						<Button
+							size="lg"
+							className="w-full h-16 text-xl font-bold rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 gap-3"
+							onClick={handleConnect}
+						>
+							<Radio className="w-6 h-6 animate-pulse" />
+							Conectarse al Lobby
+						</Button>
+					</div>
+				</div>
+			</div>
+		)
+	}
 
-            <Button
-              onClick={handleJoinGame}
-              disabled={!canJoin}
-              variant="outline"
-              className="w-full h-12 text-base font-semibold bg-transparent"
-              size="lg"
-            >
-              Unirse a Partida
-            </Button>
-          </div>
-        )}
+	return (
+		<div className="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-50 dark:bg-slate-950">
+			<div className="w-full max-w-md space-y-6 animate-in slide-in-from-right duration-300">
+				<div className="text-center space-y-2">
+					<h2 className="text-3xl font-bold tracking-tight">Lobby Principal</h2>
+					<p className="text-muted-foreground">
+						Crea una sala o únete a una existente
+					</p>
+				</div>
 
-        {/* Waiting for Player 2 */}
-        {isWaitingForPlayer && !isJoining && (
-          <Card className="p-6 bg-muted/50 border-2 border-dashed">
-            <div className="text-center space-y-4">
-              <div className="flex items-center justify-center">
-                <div className="w-12 h-12 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-              </div>
-              <div className="space-y-2">
-                <p className="font-semibold text-lg">Esperando al Jugador 2...</p>
-                <p className="text-sm text-muted-foreground">
-                  El otro jugador debe pulsar "Unirse a Partida" para comenzar
-                </p>
-              </div>
-              <Button onClick={() => useGameStore.getState().resetGame()} variant="outline" size="sm">
-                Cancelar
-              </Button>
-            </div>
-          </Card>
-        )}
+				<Card className="p-1 bg-muted/50">
+					<div className="grid grid-cols-2 gap-1">
+						<Button
+							variant={mode === 'create' ? 'default' : 'ghost'}
+							onClick={() => setMode('create')}
+							className="h-12"
+						>
+							<Plus className="w-4 h-4 mr-2" />
+							Crear Sala
+						</Button>
+						<Button
+							variant={mode === 'join' ? 'default' : 'ghost'}
+							onClick={() => setMode('join')}
+							className="h-12"
+						>
+							<Users className="w-4 h-4 mr-2" />
+							Lista de Salas
+						</Button>
+					</div>
+				</Card>
 
-        {/* Loading while joining */}
-        {isJoining && (
-          <Card className="p-6 bg-muted/50 border-2 border-dashed">
-            <div className="text-center space-y-4">
-              <div className="flex items-center justify-center">
-                <div className="w-12 h-12 rounded-full border-4 border-primary border-t-transparent animate-spin" />
-              </div>
-              <div className="space-y-2">
-                <p className="font-semibold text-lg">Uniéndote a la partida...</p>
-                <p className="text-sm text-muted-foreground">Conectando con el Jugador 1</p>
-              </div>
-              <Button onClick={() => setIsJoining(false)} variant="outline" size="sm">
-                Cancelar
-              </Button>
-            </div>
-          </Card>
-        )}
-      </div>
-    </div>
-  )
+				<Card className="p-6 space-y-6 shadow-lg border-t-4 border-t-primary">
+					<div className="space-y-4">
+						<div className="space-y-2">
+							<label className="text-sm font-medium">Tu Nombre</label>
+							<Input
+								placeholder="Ej: Jugador1"
+								value={playerName}
+								onChange={(e) => setPlayerName(e.target.value)}
+								className="h-11"
+							/>
+						</div>
+
+						{/* CREATE MODE */}
+						{mode === 'create' && (
+							<div className="space-y-4">
+								<div className="space-y-2">
+									<label className="text-sm font-medium">
+										Nombre de la Sala
+									</label>
+									<Input
+										placeholder="Ej: Mesa de Amigos"
+										value={roomName}
+										onChange={(e) => setRoomName(e.target.value)}
+										className="h-11"
+									/>
+								</div>
+								<Button
+									className="w-full h-12 text-lg"
+									disabled={
+										!playerName.trim() || !roomName.trim() || isProcessing
+									}
+									onClick={handleSubmit}
+								>
+									{isProcessing ? (
+										<div className="flex items-center gap-2">
+											<div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+											Creando...
+										</div>
+									) : (
+										<div className="flex items-center gap-2">
+											Crear Sala
+											<ArrowRight className="w-5 h-5" />
+										</div>
+									)}
+								</Button>
+							</div>
+						)}
+
+						{/* JOIN MODE (LIST) */}
+						{mode === 'join' && (
+							<div className="space-y-4">
+								<div className="space-y-2">
+									<label className="text-sm font-medium flex justify-between items-center">
+										<span>Buscar Sala</span>
+										<Button
+											variant="ghost"
+											size="sm"
+											onClick={() => fetchRooms()}
+											className="h-6 px-2"
+										>
+											<RefreshCw className="w-3 h-3 mr-1" /> Actualizar
+										</Button>
+									</label>
+									<div className="relative">
+										<Search className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
+										<Input
+											placeholder="Filtrar por nombre..."
+											value={roomName}
+											onChange={(e) => setRoomName(e.target.value)}
+											className="h-11 pl-10"
+										/>
+									</div>
+								</div>
+
+								<div className="border rounded-md bg-background">
+									<div className="h-[200px] overflow-y-auto custom-scrollbar">
+										{filteredRooms.length === 0 ? (
+											<div className="flex flex-col items-center justify-center h-full py-8 text-muted-foreground space-y-2">
+												{isProcessing ? (
+													<div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+												) : (
+													<>
+														<Users className="w-8 h-8 opacity-20" />
+														<p className="text-sm">No hay salas disponibles</p>
+													</>
+												)}
+											</div>
+										) : (
+											<div className="divide-y">
+												{filteredRooms.map((room) => (
+													<div
+														key={room.id}
+														onClick={() => handleJoinSpecificRoom(room.name)}
+														className="p-3 hover:bg-accent cursor-pointer transition-colors flex items-center justify-between group"
+													>
+														<div className="flex items-center gap-3">
+															<div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+																<Radio className="w-4 h-4 text-primary" />
+															</div>
+															<div className="flex flex-col">
+																<span className="font-medium text-sm">
+																	{room.name}
+																</span>
+																<span className="text-[10px] text-muted-foreground">
+																	ID: {room.id.substring(0, 8)}...
+																</span>
+															</div>
+														</div>
+														<Button
+															size="sm"
+															variant="ghost"
+															className="opacity-0 group-hover:opacity-100 transition-opacity"
+														>
+															Unirse <ArrowRight className="w-3 h-3 ml-1" />
+														</Button>
+													</div>
+												))}
+											</div>
+										)}
+									</div>
+								</div>
+
+								<p className="text-xs text-muted-foreground text-center">
+									* Haz clic en una sala para unirte automáticamente.
+								</p>
+							</div>
+						)}
+					</div>
+				</Card>
+
+				<div className="text-center">
+					<Button
+						variant="link"
+						onClick={() => setView('welcome')}
+						className="text-muted-foreground"
+					>
+						Volver al inicio
+					</Button>
+				</div>
+			</div>
+		</div>
+	)
 }

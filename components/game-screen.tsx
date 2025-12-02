@@ -7,7 +7,7 @@ import { Card, CardTitle } from "@/components/ui/card"
 import { Crown, Trophy, Users, Sword, Cat, Mouse } from "lucide-react"
 
 export function GameScreen() {
-  const { player1, player2, currentTurn, localPlayer, winner, state, pieces, resetGame, gameType } = useGameStore()
+  const { player1, player2, currentTurn, localPlayer, winner, state, pieces, resetGame, returnToRoom, gameType } = useGameStore()
 
   const currentPlayerName = currentTurn === player1?.color ? player1?.name : player2?.name
 
@@ -148,8 +148,11 @@ export function GameScreen() {
                 <p className="text-2xl font-bold text-[#d87a2f]">¡Ganador: {winner.name}!</p>
               </div>
               <div className="flex gap-3 justify-center flex-wrap">
+                <Button onClick={returnToRoom} variant="default" className="shadow-md">
+                  Volver a la Sala
+                </Button>
                 <Button onClick={resetGame} variant="outline" className="bg-white/90 hover:bg-white">
-                  Volver al inicio
+                  Salir del Lobby
                 </Button>
               </div>
             </div>

@@ -1,155 +1,187 @@
 import Peer, { type DataConnection } from "peerjs"
 
-const GLOBAL_ROOM_ID = "versusboard-global-game-room"
+export type ConnectionStatus = "disconnected" | "connecting" | "connected" | "error"
 
 export class GameConnection {
   private peer: Peer | null = null
   private connection: DataConnection | null = null
   private onMessageCallback: ((data: any) => void) | null = null
-  private onConnectedCallback: (() => void) | null = null
-  private onDisconnectedCallback: (() => void) | null = null
+  private onStatusChangeCallback: ((status: ConnectionStatus) => void) | null = null
   private isHost = false
+  private keepAliveInterval: NodeJS.Timeout | null = null
 
-  async initialize(isHost: boolean): Promise<string> {
+  // Prefix to avoid collisions on public PeerJS server
+  private readonly ID_PREFIX = "versus-board-v1-"
+
+  private updateStatus(status: ConnectionStatus) {
+    if (this.onStatusChangeCallback) {
+      this.onStatusChangeCallback(status)
+    }
+  }
+
+  private sanitizeRoomId(roomId: string): string {
+    // Normalize: lowercase, trim, replace non-alphanum with -, collapse multiple - to single -
+    return this.ID_PREFIX + roomId.trim().toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") // Remove leading/trailing hyphens
+  }
+
+  async initialize(roomId: string, isHost: boolean): Promise<string> {
     this.isHost = isHost
+    this.updateStatus("connecting")
 
     return new Promise((resolve, reject) => {
-      const peerId = isHost ? GLOBAL_ROOM_ID : undefined
+      // If host, we try to take the specific Room ID.
+      // If guest, we don't care about our ID, just let PeerJS assign one.
+      const peerId = isHost ? this.sanitizeRoomId(roomId) : undefined
 
       this.peer = new Peer(peerId, {
-        debug: 2,
+        debug: 1, // Reduced debug level
         config: {
           iceServers: [
             { urls: "stun:stun.l.google.com:19302" },
             { urls: "stun:global.stun.twilio.com:3478" },
-            { urls: "stun:stun1.l.google.com:19302" },
-            { urls: "stun:stun2.l.google.com:19302" },
           ],
         },
       })
 
       this.peer.on("open", (id) => {
-        console.log("[v0] PeerJS initialized with ID:", id)
+        console.log("[GameConnection] Peer initialized:", id)
+        if (!isHost) {
+          // Guest is ready to connect, but not "connected" to room yet
+        } else {
+          // Host is ready and waiting
+          this.updateStatus("connected")
+        }
         resolve(id)
       })
 
       this.peer.on("error", (error) => {
-        console.error("[v0] PeerJS error:", error)
-        if (error.type === "peer-unavailable") {
-          console.log("[v0] Peer no disponible, esperando conexión...")
-        } else if (error.type === "network" || error.type === "server-error") {
-          reject(new Error("Error de red. Por favor verifica tu conexión."))
-        } else if (error.type === "browser-incompatible") {
-          reject(new Error("Navegador no compatible con WebRTC."))
-        } else if (error.type === "unavailable-id") {
-          reject(new Error("Ya existe una partida activa. Espera a que termine o únete como Jugador 2."))
+        console.error("[GameConnection] Peer error:", error)
+        this.updateStatus("error")
+
+        if (error.type === "unavailable-id") {
+          reject(new Error("La sala ya existe. Intenta otro nombre o únete a ella."))
+        } else if (error.type === "peer-unavailable") {
+          reject(new Error("Sala no encontrada."))
         } else {
-          console.warn("[v0] Error de PeerJS:", error.type)
+          reject(error)
         }
       })
 
       if (isHost) {
         this.peer.on("connection", (conn) => {
-          console.log("[v0] Incoming connection from guest")
+          console.log("[GameConnection] Host received connection")
+
+          // If we already have a connection, might want to reject new ones or replace?
+          // For now, we accept single opponent.
+          if (this.connection && this.connection.open) {
+            conn.close()
+            return
+          }
+
           this.setupConnection(conn)
         })
       }
-
-      setTimeout(() => {
-        if (!this.peer?.id) {
-          reject(new Error("Tiempo de espera agotado al inicializar conexión."))
-        }
-      }, 15000)
     })
   }
 
-  async connect(retries = 5): Promise<void> {
+  async connectToRoom(roomId: string, retries = 3): Promise<void> {
+    if (!this.peer) {
+      throw new Error("Peer not initialized")
+    }
+
+    const targetId = this.sanitizeRoomId(roomId)
+    console.log("[GameConnection] Connecting to:", targetId)
+    this.updateStatus("connecting")
+
     return new Promise((resolve, reject) => {
-      if (!this.peer) {
-        reject(new Error("Peer not initialized"))
-        return
-      }
+      const connectAttempt = (attempt: number) => {
+        if (!this.peer) return
 
-      console.log("[v0] Attempting to connect to global room:", GLOBAL_ROOM_ID)
-
-      let attemptCount = 0
-      const attemptConnection = () => {
-        attemptCount++
-        console.log(`[v0] Connection attempt ${attemptCount}/${retries}`)
-
-        const conn = this.peer!.connect(GLOBAL_ROOM_ID, {
+        const conn = this.peer.connect(targetId, {
           reliable: true,
         })
 
-        this.setupConnection(conn)
+        let connected = false
 
+        // Timeout for this specific attempt
         const timeout = setTimeout(() => {
-          if (!conn.open && attemptCount < retries) {
-            console.log("[v0] Connection timeout, retrying...")
+          if (!connected) {
+            console.log(`[GameConnection] Attempt ${attempt} timed out`)
             conn.close()
-            setTimeout(() => attemptConnection(), 2000)
-          } else if (!conn.open) {
-            reject(new Error("No se pudo conectar. Asegúrate de que el Jugador 1 haya creado la partida."))
+            if (attempt < retries) {
+              connectAttempt(attempt + 1)
+            } else {
+              this.updateStatus("error")
+              reject(new Error("No se pudo conectar a la sala. Verifica el nombre."))
+            }
           }
         }, 5000)
 
         conn.on("open", () => {
+          connected = true
           clearTimeout(timeout)
-          console.log("[v0] Connection opened successfully")
+          this.setupConnection(conn)
           resolve()
         })
 
-        conn.on("error", (error) => {
-          clearTimeout(timeout)
-          console.error("[v0] Connection error:", error)
-          if (attemptCount < retries) {
-            console.log("[v0] Connection failed, retrying...")
-            setTimeout(() => attemptConnection(), 2000)
-          } else {
-            reject(error)
-          }
+        conn.on("error", (err) => {
+          console.error("Connection attempt error:", err)
         })
       }
 
-      attemptConnection()
+      connectAttempt(1)
     })
   }
 
   private setupConnection(conn: DataConnection) {
     this.connection = conn
+    this.updateStatus("connected")
+    this.startKeepAlive()
 
-    conn.on("data", (data) => {
-      console.log("[v0] Received data:", data)
+    conn.on("data", (data: any) => {
+      if (data?.type === "ping") return // Heartbeat ignore
+
       if (this.onMessageCallback) {
         this.onMessageCallback(data)
       }
     })
 
-    conn.on("open", () => {
-      console.log("[v0] Connection established")
-      if (this.onConnectedCallback) {
-        this.onConnectedCallback()
-      }
-    })
-
     conn.on("close", () => {
-      console.log("[v0] Connection closed")
-      if (this.onDisconnectedCallback) {
-        this.onDisconnectedCallback()
-      }
+      console.log("[GameConnection] Connection closed")
+      this.stopKeepAlive()
+      this.updateStatus("disconnected")
+      this.connection = null
     })
 
-    conn.on("error", (error) => {
-      console.error("[v0] Connection error:", error)
+    conn.on("error", (err) => {
+      console.error("[GameConnection] Connection error:", err)
+      this.updateStatus("error")
     })
   }
 
+  private startKeepAlive() {
+    this.stopKeepAlive()
+    this.keepAliveInterval = setInterval(() => {
+      if (this.connection?.open) {
+        this.connection.send({ type: "ping" })
+      }
+    }, 5000)
+  }
+
+  private stopKeepAlive() {
+    if (this.keepAliveInterval) {
+      clearInterval(this.keepAliveInterval)
+      this.keepAliveInterval = null
+    }
+  }
+
   send(data: any) {
-    if (this.connection && this.connection.open) {
-      console.log("[v0] Sending data:", data)
+    if (this.connection?.open) {
       this.connection.send(data)
     } else {
-      console.warn("[v0] Cannot send data, connection not open")
+      console.warn("[GameConnection] Cannot send, not connected")
     }
   }
 
@@ -157,23 +189,12 @@ export class GameConnection {
     this.onMessageCallback = callback
   }
 
-  onConnected(callback: () => void) {
-    this.onConnectedCallback = callback
-  }
-
-  onDisconnected(callback: () => void) {
-    this.onDisconnectedCallback = callback
-  }
-
-  getPeerId(): string | null {
-    return this.peer?.id || null
-  }
-
-  isConnected(): boolean {
-    return this.connection?.open || false
+  onStatusChange(callback: (status: ConnectionStatus) => void) {
+    this.onStatusChangeCallback = callback
   }
 
   disconnect() {
+    this.stopKeepAlive()
     if (this.connection) {
       this.connection.close()
     }
@@ -182,5 +203,6 @@ export class GameConnection {
     }
     this.connection = null
     this.peer = null
+    this.updateStatus("disconnected")
   }
 }

@@ -1,16 +1,31 @@
 import { create } from "zustand"
 import type { Position, Player, PlayerColor, GameType, GameState, BaseMove, BasePiece } from "./common/types"
-import { GameConnection } from "./common/connection"
+import { GameConnection, type ConnectionStatus } from "./common/connection"
 import { GameEngine } from "./game-engine"
+
+interface ActiveRoom {
+  id: string
+  name: string
+  createdAt: number
+}
 
 interface GameStore {
   state: GameState
   gameType: GameType
+  currentRoomName: string | null
+  currentRoomId: string | null
+  isHost: boolean
+
+  availableRooms: ActiveRoom[] // New: List of rooms
+
   player1: Player | null
   player2: Player | null
   currentTurn: PlayerColor
   winner: Player | null
+
   connection: GameConnection | null
+  connectionStatus: ConnectionStatus
+
   localPlayer: Player | null
   remotePeerId: string | null
   pieces: BasePiece[]
@@ -21,19 +36,26 @@ interface GameStore {
 
   // Actions
   setPlayerName: (name: string) => void
-  setGameType: (gameType: GameType) => void
-  createGame: () => Promise<void>
-  joinGame: () => Promise<void>
+  fetchRooms: () => Promise<void> // New action
+  createRoom: (roomName: string) => Promise<void>
+  joinRoom: (roomName: string) => Promise<void>
+  startGame: (gameType: GameType) => void
   selectPiece: (position: Position | null) => void
   movePiece: (move: BaseMove) => void
-  resetGame: () => void
   handleRemoteMove: (move: BaseMove) => void
-  setWinner: (player: Player) => void
+  returnToRoom: () => void
+  resetGame: () => void // Fully disconnect
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
-  state: "no-game",
+  state: "lobby",
   gameType: "checkers",
+  currentRoomName: null,
+  currentRoomId: null,
+  isHost: false,
+
+  availableRooms: [],
+
   player1: null,
   player2: null,
   currentTurn: "dark",
@@ -44,6 +66,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   mustCapture: false,
   continuousCapture: false,
   connection: null,
+  connectionStatus: "disconnected",
   localPlayer: null,
   remotePeerId: null,
 
@@ -51,142 +74,221 @@ export const useGameStore = create<GameStore>((set, get) => ({
     set({ localPlayer: { id: "local", name, color: "dark" } })
   },
 
-  setGameType: (gameType: GameType) => {
-    set({ gameType })
+  fetchRooms: async () => {
+    try {
+      const res = await fetch("/api/rooms")
+      if (res.ok) {
+        const rooms = await res.json()
+        set({ availableRooms: rooms })
+      }
+    } catch (error) {
+      console.error("Failed to fetch rooms:", error)
+    }
   },
 
-  createGame: async () => {
-    const { localPlayer, gameType } = get()
+  createRoom: async (roomName: string) => {
+    const { localPlayer } = get()
     if (!localPlayer) return
 
     try {
+      // Disconnect existing if any
+      get().connection?.disconnect()
+
       const connection = new GameConnection()
-      const peerId = await connection.initialize(true)
 
-      connection.onMessage((data) => {
-        if (data.type === "join") {
-          let player1Color: PlayerColor
-          let player2Color: PlayerColor
-
-          if (gameType === "cat-and-mouse") {
-            // Random: quién es Ratón (oscuro) vs Gatos (claro)
-            const isPlayer1Mouse = Math.random() > 0.5
-            player1Color = isPlayer1Mouse ? "dark" : "light"
-            player2Color = isPlayer1Mouse ? "light" : "dark"
-          } else {
-            // Damas / Come-Come: random piezas oscuras vs claras
-            const randomColor = Math.random() > 0.5 ? "dark" : "light"
-            player1Color = randomColor
-            player2Color = player1Color === "dark" ? "light" : "dark"
-          }
-
-          const player2: Player = {
-            id: "remote",
-            name: data.playerName,
-            color: player2Color,
-          }
-
-          const engine = GameEngine.get(gameType)
-          const newPieces = engine.initializePieces(player1Color)
-
-          set({
-            player1: { ...localPlayer, color: player1Color },
-            player2,
-            state: "in-progress",
-            currentTurn: "dark",
-            pieces: newPieces,
-            localPlayer: { ...localPlayer, color: player1Color },
-          })
-
-          connection.send({
-            type: "start",
-            yourColor: player2Color,
-            opponentName: localPlayer.name,
-            pieces: newPieces,
-            gameType,
-          })
-        } else if (data.type === "move") {
-          get().handleRemoteMove(data.move)
-        } else if (data.type === "reset") {
-          get().resetGame()
+      // Subscribe to status changes
+      connection.onStatusChange((status) => {
+        set({ connectionStatus: status })
+        if (status === "disconnected") {
+          // Handle unexpected disconnects if needed
         }
       })
 
-      connection.onDisconnected(() => {
-        if (get().state !== "finished") {
-          alert("El rival se desconectó. Fin de partida.")
-          set({ state: "finished" })
+      const peerId = await connection.initialize(roomName, true)
+
+      // Register room in API
+      await fetch("/api/rooms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "register",
+          id: peerId,
+          name: roomName
+        })
+      })
+
+      connection.onMessage((data) => {
+        const { state } = get()
+
+        if (data.type === "join") {
+          // Guest joined the room
+          const player2: Player = {
+            id: "remote",
+            name: data.playerName,
+            color: "light", // Default, changes on game start
+          }
+          set({
+            player2,
+            state: "room", // Confirmed in room with 2 players
+            player1: { ...get().localPlayer!, color: "dark" }
+          })
+
+          // Tell guest we are here
+          connection.send({
+            type: "welcome",
+            hostName: localPlayer.name
+          })
+
+          // Unregister room from list so others don't try to join full room?
+          // Or keep it visible but show "Full"? For now, simple: unregister when full/started might be better
+          // But let's leave it for now or remove it? 
+          // "Serverless P2P" means we probably should remove it from the list if we only support 1v1.
+          // Let's remove it from the public list once a player joins.
+          fetch("/api/rooms", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              type: "unregister",
+              id: peerId
+            })
+          }).catch(err => console.error("Failed to unregister room:", err))
+
+        } else if (data.type === "start_game") {
+          // Handled in guest logic, but host initiates usually. 
+          // If we implement "Guest can pick game", this would be needed.
+        } else if (data.type === "move") {
+          get().handleRemoteMove(data.move)
+        } else if (data.type === "return_room") {
+          get().returnToRoom()
         }
       })
 
       set({
         connection,
+        currentRoomName: roomName,
+        currentRoomId: peerId,
+        isHost: true,
+        state: "room", // Waiting in room
         player1: localPlayer,
-        state: "waiting-player",
-        remotePeerId: peerId,
+        player2: null
       })
     } catch (error) {
-      console.error("[VersusBoard] Error creating game:", error)
-      alert(`Error al crear la partida: ${error instanceof Error ? error.message : "Error desconocido"}`)
-      set({ state: "no-game" })
+      console.error("Error creating room:", error)
+      alert(`Error al crear la sala: ${error instanceof Error ? error.message : "Error desconocido"}`)
+      set({ state: "lobby" })
     }
   },
 
-  joinGame: async () => {
+  joinRoom: async (roomName: string) => {
     const { localPlayer } = get()
     if (!localPlayer) return
 
     try {
+      get().connection?.disconnect()
+
       const connection = new GameConnection()
-      await connection.initialize(false)
-      await connection.connect(5)
+
+      connection.onStatusChange((status) => {
+        set({ connectionStatus: status })
+        if (status === "disconnected") {
+          // If disconnected while playing, maybe show alert?
+        }
+      })
+
+      // Initialize as guest (no specific ID request)
+      await connection.initialize("", false)
+
+      // Connect to the host room
+      await connection.connectToRoom(roomName)
 
       connection.onMessage((data) => {
-        if (data.type === "start") {
-          const yourColor = data.yourColor as PlayerColor
-          const opponentName = data.opponentName
-          const pieces = data.pieces as BasePiece[]
-          const gameType = data.gameType as GameType
-
+        if (data.type === "welcome") {
           set({
-            player1: { id: "remote", name: opponentName, color: yourColor === "dark" ? "light" : "dark" },
-            player2: { ...localPlayer, color: yourColor },
+            player1: { id: "remote", name: data.hostName, color: "dark" },
+            player2: { ...get().localPlayer!, color: "light" },
+            state: "room",
+            currentRoomName: roomName,
+            isHost: false
+          })
+        } else if (data.type === "start_game") {
+          const { gameType, yourColor, pieces, opponentName } = data
+          set({
             state: "in-progress",
-            currentTurn: "dark",
-            pieces,
-            localPlayer: { ...localPlayer, color: yourColor },
             gameType,
+            pieces,
+            currentTurn: "dark",
+            player1: { id: "remote", name: opponentName, color: yourColor === "dark" ? "light" : "dark" },
+            player2: { ...get().localPlayer!, color: yourColor },
+            localPlayer: { ...get().localPlayer!, color: yourColor }
           })
         } else if (data.type === "move") {
           get().handleRemoteMove(data.move)
-        } else if (data.type === "reset") {
-          get().resetGame()
+        } else if (data.type === "return_room") {
+          get().returnToRoom()
         }
       })
 
-      connection.onDisconnected(() => {
-        if (get().state !== "finished") {
-          alert("El rival se desconectó. Fin de partida.")
-          set({ state: "finished" })
-        }
-      })
-
+      // Send join request
       connection.send({
         type: "join",
-        playerName: localPlayer.name,
+        playerName: localPlayer.name
       })
 
       set({ connection })
+
     } catch (error) {
-      console.error("[VersusBoard] Error joining game:", error)
-      alert(`Error al unirse a la partida: ${error instanceof Error ? error.message : "Error desconocido"}`)
-      set({ state: "no-game" })
+      console.error("Error joining room:", error)
+      alert(`Error al unirse a la sala: ${error instanceof Error ? error.message : "Error desconocido"}`)
+      set({ state: "lobby" })
     }
   },
 
+  startGame: (gameType: GameType) => {
+    const { connection, player1, player2, isHost } = get()
+    if (!connection || !isHost || !player2) return
+
+    // Logic to randomize colors or keep fixed
+    let player1Color: PlayerColor
+    let player2Color: PlayerColor
+
+    if (gameType === "cat-and-mouse") {
+      const isPlayer1Mouse = Math.random() > 0.5
+      player1Color = isPlayer1Mouse ? "dark" : "light"
+      player2Color = isPlayer1Mouse ? "light" : "dark"
+    } else {
+      const randomColor = Math.random() > 0.5 ? "dark" : "light"
+      player1Color = randomColor
+      player2Color = player1Color === "dark" ? "light" : "dark"
+    }
+
+    const engine = GameEngine.get(gameType)
+    const newPieces = engine.initializePieces(player1Color)
+
+    // Update Local
+    set({
+      state: "in-progress",
+      gameType,
+      pieces: newPieces,
+      currentTurn: "dark",
+      player1: { ...player1!, color: player1Color },
+      player2: { ...player2!, color: player2Color },
+      localPlayer: { ...get().localPlayer!, color: player1Color }
+    })
+
+    // Send to Guest
+    connection.send({
+      type: "start_game",
+      gameType,
+      yourColor: player2Color,
+      pieces: newPieces,
+      opponentName: player1!.name
+    })
+  },
+
   selectPiece: (position: Position | null) => {
-    const { pieces, gameType, currentTurn } = get()
-    
+    const { pieces, gameType, currentTurn, state } = get()
+    if (state !== "in-progress") return
+
     if (!position) {
       set({ selectedPiece: null, validMoves: [] })
       return
@@ -194,7 +296,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     const engine = GameEngine.get(gameType)
     const moves = engine.getValidMoves(position, pieces, currentTurn)
-    
+
     set({ selectedPiece: position, validMoves: moves })
   },
 
@@ -202,10 +304,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const { connection, pieces, currentTurn, player1, player2, gameType } = get()
     const engine = GameEngine.get(gameType)
 
-    // 1. Aplicar movimiento
     const newPieces = engine.applyMove(move, pieces)
-    
-    // 2. Verificar capturas continuas
+
     let continuousCaptures: BaseMove[] = []
     if (move.capturedPieces && move.capturedPieces.length > 0 && !move.promotion) {
       continuousCaptures = engine.getContinuousCaptures(move.to, newPieces, currentTurn)
@@ -216,17 +316,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
         pieces: newPieces,
         selectedPiece: move.to,
         continuousCapture: true,
-        // Actualizar movimientos válidos para la captura continua
         validMoves: continuousCaptures
       })
 
-      if (connection) {
-        connection.send({ type: "move", move })
-      }
+      if (connection) connection.send({ type: "move", move })
       return
     }
 
-    // 3. Cambio de turno
     const nextTurn: PlayerColor = currentTurn === "dark" ? "light" : "dark"
     const hasCaptures = engine.hasAnyCaptures(newPieces, nextTurn)
 
@@ -239,36 +335,26 @@ export const useGameStore = create<GameStore>((set, get) => ({
       mustCapture: hasCaptures,
     })
 
-    // 4. Verificar victoria/derrota
-    // Nota: hasPlayerLost verifica si el jugador `playerColor` (nextTurn) ha perdido
     const playerLost = engine.hasPlayerLost(newPieces, nextTurn)
 
     if (playerLost) {
       const winnerColor = engine.getWinner(newPieces, nextTurn, player1?.color || "dark")
       const winner = winnerColor === player1?.color ? player1 : player2
-      
+
       if (winner) {
         set({ winner, state: "finished" })
       }
     }
 
-    if (connection) {
-      connection.send({ type: "move", move })
-    }
+    if (connection) connection.send({ type: "move", move })
   },
 
   handleRemoteMove: (move: BaseMove) => {
-    // Reutilizar lógica es complicado porque movePiece hace set() y side effects.
-    // Mejor replicar lógica "pura" pero actualizando el estado local.
-    // Ojo: handleRemoteMove es IDÉNTICO a movePiece salvo que NO envía el movimiento por red.
-    // Podríamos refactorizar para tener una función `applyGameMove(move, isRemote)` interna.
-    // Por ahora, copiaré la lógica para asegurar estabilidad.
-
     const { pieces, currentTurn, player1, player2, gameType } = get()
     const engine = GameEngine.get(gameType)
 
     const newPieces = engine.applyMove(move, pieces)
-    
+
     let continuousCaptures: BaseMove[] = []
     if (move.capturedPieces && move.capturedPieces.length > 0 && !move.promotion) {
       continuousCaptures = engine.getContinuousCaptures(move.to, newPieces, currentTurn)
@@ -278,7 +364,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       set({
         pieces: newPieces,
         continuousCapture: true,
-        // No necesitamos validMoves aquí porque no somos nosotros moviendo
       })
       return
     }
@@ -300,25 +385,55 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (playerLost) {
       const winnerColor = engine.getWinner(newPieces, nextTurn, player1?.color || "dark")
       const winner = winnerColor === player1?.color ? player1 : player2
-      
+
       if (winner) {
         set({ winner, state: "finished" })
       }
     }
   },
 
-  setWinner: (player: Player) => {
-    set({ winner: player, state: "finished" })
+  returnToRoom: () => {
+    const { connection } = get()
+
+    // If host triggers this, send message to guest
+    // If guest receives this, just update state
+    // We'll assume both call this locally, but usually one button triggers it for both.
+    // For simplicity: whoever clicks "Back to Room" sends a signal.
+
+    if (connection) {
+      connection.send({ type: "return_room" })
+    }
+
+    set({
+      state: "room",
+      winner: null,
+      pieces: [],
+      validMoves: [],
+      selectedPiece: null
+    })
   },
 
   resetGame: () => {
-    const { connection } = get()
+    const { connection, isHost, currentRoomId } = get()
+
+    // If host, remove from registry (just in case it wasn't removed on join)
+    if (isHost && currentRoomId) {
+      fetch("/api/rooms", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          type: "unregister",
+          id: currentRoomId
+        })
+      }).catch(err => console.error("Failed to unregister room:", err))
+    }
+
     if (connection) {
       connection.disconnect()
     }
 
     set({
-      state: "no-game",
+      state: "lobby",
       gameType: "checkers",
       player1: null,
       player2: null,
@@ -332,6 +447,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       connection: null,
       localPlayer: null,
       remotePeerId: null,
+      currentRoomName: null,
+      currentRoomId: null,
+      isHost: false,
+      connectionStatus: "disconnected"
     })
   },
 }))
