@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { useGameStore } from "@/lib/store"
-import { Crown, Castle, Sword } from "lucide-react"
+import { Crown, Castle, Sword, Cat } from "lucide-react"
 import type { GameType } from "@/lib/common/types"
 
 export function LobbyScreen() {
@@ -69,7 +69,7 @@ export function LobbyScreen() {
         {/* Game Selection */}
         <div className="space-y-3">
           <label className="text-sm font-medium text-foreground">Selecciona el juego</label>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-2 gap-3">
             {/* Checkers */}
             <Card
               onClick={() => setSelectedGame("checkers")}
@@ -99,6 +99,22 @@ export function LobbyScreen() {
                 />
                 <p className="font-semibold text-sm">Come-Come</p>
                 {selectedGame === "come-come" && <p className="text-xs text-primary">Seleccionado</p>}
+              </div>
+            </Card>
+
+            {/* Cat and Mouse */}
+            <Card
+              onClick={() => setSelectedGame("cat-and-mouse")}
+              className={`p-4 border-2 cursor-pointer hover:bg-primary/10 transition-colors ${
+                selectedGame === "cat-and-mouse" ? "border-primary bg-primary/5" : "border-border"
+              }`}
+            >
+              <div className="text-center space-y-1">
+                <Cat
+                  className={`w-8 h-8 mx-auto ${selectedGame === "cat-and-mouse" ? "text-primary" : "text-muted-foreground"}`}
+                />
+                <p className="font-semibold text-sm">Gato y Ratón</p>
+                {selectedGame === "cat-and-mouse" && <p className="text-xs text-primary">Seleccionado</p>}
               </div>
             </Card>
 

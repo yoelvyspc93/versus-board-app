@@ -1,6 +1,6 @@
 export type PlayerColor = "light" | "dark"
 export type GameState = "no-game" | "waiting-player" | "in-progress" | "finished"
-export type GameType = "checkers" | "come-come" | "chess"
+export type GameType = "checkers" | "come-come" | "cat-and-mouse" | "chess"
 
 export interface Position {
   row: number
