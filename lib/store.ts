@@ -96,7 +96,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           let player2Color: PlayerColor
 
           if (gameType === "cat-and-mouse") {
-            // Randomly assign who plays mouse (dark) vs cats (light)
+            // Random: quién es Ratón (oscuro) vs Gatos (claro)
             const isPlayer1Mouse = Math.random() > 0.5
             player1Color = isPlayer1Mouse ? "dark" : "light"
             player2Color = isPlayer1Mouse ? "light" : "dark"
@@ -118,7 +118,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
           } else if (gameType === "come-come") {
             newPieces = initializeComeComePieces(player1Color)
           } else if (gameType === "cat-and-mouse") {
-            // Mouse color is always "dark" (mouse moves first)
+            // Ratón (oscuro) siempre empieza
             newPieces = initializeCatAndMousePieces("dark")
           } else {
             newPieces = []
@@ -126,7 +126,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
           set({
             player1: { ...localPlayer, color: player1Color },
-            player2: player2,
+            player2,
             state: "in-progress",
             currentTurn: "dark",
             pieces: newPieces,
@@ -188,7 +188,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             player2: { ...localPlayer, color: yourColor },
             state: "in-progress",
             currentTurn: "dark",
-            pieces: pieces,
+            pieces,
             localPlayer: { ...localPlayer, color: yourColor },
             gameType,
           })
@@ -250,7 +250,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       newPieces = pieces
     }
 
-    // Handle continuous captures for checkers/come-come
+    // Si hubo coronación, NO permitimos capturas encadenadas
+    if (move.promotion) {
+      continuousCaptures = []
+    }
+
+    // Capturas encadenadas (solo Damas / Come-Come, si no hubo coronación)
     if (continuousCaptures.length > 0) {
       set({
         pieces: newPieces,
@@ -275,7 +280,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       mustCapture: hasCaptures,
     })
 
-    // Check for winner
     const opponent = nextTurn === player1?.color ? player1 : player2
     let playerLost = false
 
@@ -288,7 +292,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
 
     if (playerLost) {
-      const winner = currentTurn === player1?.color ? player1 : player2
+      let winner: Player | null = null
+
+      if (gameType === "come-come") {
+        // Come-Come: misère, gana el que se queda sin piezas / sin movimientos
+        winner = opponent ?? null
+      } else {
+        // Damas y Gato y Ratón: gana quien hizo el último movimiento
+        winner = currentTurn === player1?.color ? player1 ?? null : player2 ?? null
+      }
+
       if (winner) {
         set({ winner, state: "finished" })
       }
@@ -326,6 +339,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
       newPieces = pieces
     }
 
+    // Si hubo coronación, NO permitimos capturas encadenadas
+    if (move.promotion) {
+      continuousCaptures = []
+    }
+
     if (continuousCaptures.length > 0) {
       set({
         pieces: newPieces,
@@ -357,7 +375,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
 
     if (playerLost) {
-      const winner = currentTurn === player1?.color ? player1 : player2
+      let winner: Player | null = null
+
+      if (gameType === "come-come") {
+        // Come-Come: misère, gana el que se queda sin piezas / sin movimientos
+        winner = opponent ?? null
+      } else {
+        // Damas y Gato y Ratón: gana quien hizo el último movimiento
+        winner = currentTurn === player1?.color ? player1 ?? null : player2 ?? null
+      }
+
       if (winner) {
         set({ winner, state: "finished" })
       }
