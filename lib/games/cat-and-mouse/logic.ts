@@ -8,7 +8,7 @@ export function initializeCatAndMousePieces(mouseColor: PlayerColor): CatAndMous
 
   // El ratón comienza en la fila 7 (fila inferior), en la casilla oscura central
   // En un tablero de damas, las casillas oscuras de la fila 7 están en columnas 0, 2, 4, 6
-  // La "central" sería columna 2 o 4, usaremos columna 4 (quinta casilla oscura desde la izquierda)
+  // Usamos columna 4
   pieces.push({
     id: "mouse",
     type: "mouse",
@@ -80,10 +80,8 @@ export function getCatValidMoves(cat: CatAndMousePiece, allPieces: CatAndMousePi
   const moves: CatAndMouseMove[] = []
   const { row, col } = cat.position
 
-  // Los gatos se mueven 1 casilla diagonal en cualquier dirección
+  // Los gatos se mueven 1 casilla diagonal solo hacia adelante (desde fila 0 hacia fila 7)
   const directions = [
-    { dr: -1, dc: -1 }, // arriba-izquierda
-    { dr: -1, dc: 1 }, // arriba-derecha
     { dr: 1, dc: -1 }, // abajo-izquierda
     { dr: 1, dc: 1 }, // abajo-derecha
   ]
@@ -109,7 +107,7 @@ export function getCatValidMoves(cat: CatAndMousePiece, allPieces: CatAndMousePi
   return moves
 }
 
-// Obtener todos los movimientos válidos para un color
+// Obtener todos los movimientos válidos para un color desde una posición
 export function getValidMoves(
   position: Position,
   pieces: CatAndMousePiece[],
@@ -164,7 +162,7 @@ export function hasPlayerLost(pieces: CatAndMousePiece[], playerColor: PlayerCol
   const isMousePlayer = mouse.color === playerColor
 
   if (isMousePlayer) {
-    // El ratón pierde si no tiene movimientos o si los gatos ganaron
+    // El ratón pierde si los gatos han ganado (ratón sin movimientos)
     return haveCatsWon(pieces)
   } else {
     // Los gatos pierden si el ratón llegó a la fila opuesta
