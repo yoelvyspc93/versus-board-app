@@ -35,9 +35,9 @@ export function LobbyScreen() {
 	// Refresh rooms when entering "join" mode or periodically
 	useEffect(() => {
 		if (mode === 'join' && view === 'lobby') {
-			fetchRooms()
-			const interval = setInterval(fetchRooms, 5000) // Auto refresh every 5s
-			return () => clearInterval(interval)
+			// fetchRooms() // Disabled for static site
+			// const interval = setInterval(fetchRooms, 5000) // Auto refresh every 5s
+			// return () => clearInterval(interval)
 		}
 	}, [mode, view, fetchRooms])
 
@@ -204,24 +204,47 @@ export function LobbyScreen() {
 							<div className="space-y-4">
 								<div className="space-y-2">
 									<label className="text-sm font-medium flex justify-between items-center">
-										<span>Buscar Sala</span>
-										<Button
-											variant="ghost"
-											size="sm"
-											onClick={() => fetchRooms()}
-											className="h-6 px-2"
-										>
-											<RefreshCw className="w-3 h-3 mr-1" /> Actualizar
-										</Button>
+										<span>Unirse a Sala</span>
 									</label>
 									<div className="relative">
 										<Search className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
 										<Input
-											placeholder="Filtrar por nombre..."
+											placeholder="Nombre exacto de la sala..."
 											value={roomName}
 											onChange={(e) => setRoomName(e.target.value)}
 											className="h-11 pl-10"
 										/>
+									</div>
+								</div>
+
+								<Button
+									className="w-full h-12 text-lg"
+									disabled={
+										!playerName.trim() || !roomName.trim() || isProcessing
+									}
+									onClick={handleSubmit}
+								>
+									{isProcessing ? (
+										<div className="flex items-center gap-2">
+											<div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+											Conectando...
+										</div>
+									) : (
+										<div className="flex items-center gap-2">
+											Unirse a Sala
+											<ArrowRight className="w-5 h-5" />
+										</div>
+									)}
+								</Button>
+
+								<div className="relative py-2">
+									<div className="absolute inset-0 flex items-center">
+										<span className="w-full border-t" />
+									</div>
+									<div className="relative flex justify-center text-xs uppercase">
+										<span className="bg-background px-2 text-muted-foreground">
+											O buscar en lista (Experimental)
+										</span>
 									</div>
 								</div>
 
