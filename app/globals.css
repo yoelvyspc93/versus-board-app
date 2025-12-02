@@ -16,8 +16,8 @@
   --secondary-foreground: #2d2520;
   --muted: #f5f1e8;
   --muted-foreground: #6b5d56;
-  --accent: #3c7ff7;
-  --accent-foreground: #ffffff;
+  --accent: #c79a6b;
+  --accent-foreground: #2d2520;
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
   --border: #e5ddd4;
@@ -121,6 +121,7 @@
   * {
     @apply border-border outline-ring/50;
   }
+
   body {
     @apply bg-background text-foreground;
   }
