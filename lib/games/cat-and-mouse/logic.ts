@@ -6,9 +6,7 @@ export function initializeCatAndMousePieces(mouseColor: PlayerColor): CatAndMous
   const pieces: CatAndMousePiece[] = []
   const catColor: PlayerColor = mouseColor === "dark" ? "light" : "dark"
 
-  // El ratón comienza en la fila 7 (fila inferior), en la casilla oscura central
-  // En un tablero de damas, las casillas oscuras de la fila 7 están en columnas 0, 2, 4, 6
-  // Usamos columna 4
+  // Ratón en la fila 7 (inferior), casilla oscura central (col 4)
   pieces.push({
     id: "mouse",
     type: "mouse",
@@ -16,8 +14,7 @@ export function initializeCatAndMousePieces(mouseColor: PlayerColor): CatAndMous
     position: { row: 7, col: 4 },
   })
 
-  // Los 4 gatos comienzan en la fila 0 (fila superior), en las 4 casillas oscuras
-  // En la fila 0, las casillas oscuras están en columnas 1, 3, 5, 7
+  // 4 gatos en la fila 0 (superior), casillas oscuras: 1, 3, 5, 7
   const catColumns = [1, 3, 5, 7]
   catColumns.forEach((col, idx) => {
     pieces.push({
@@ -46,19 +43,18 @@ export function getMouseValidMoves(mouse: CatAndMousePiece, allPieces: CatAndMou
   const moves: CatAndMouseMove[] = []
   const { row, col } = mouse.position
 
-  // El ratón se mueve 1 casilla diagonal en cualquier dirección (adelante o atrás)
+  // El ratón se mueve 1 casilla diagonal en cualquier dirección (adelante y atrás)
   const directions = [
     { dr: -1, dc: -1 }, // arriba-izquierda
-    { dr: -1, dc: 1 }, // arriba-derecha
-    { dr: 1, dc: -1 }, // abajo-izquierda
-    { dr: 1, dc: 1 }, // abajo-derecha
+    { dr: -1, dc: 1 },  // arriba-derecha
+    { dr: 1, dc: -1 },  // abajo-izquierda
+    { dr: 1, dc: 1 },   // abajo-derecha
   ]
 
   for (const { dr, dc } of directions) {
     const newRow = row + dr
     const newCol = col + dc
 
-    // Verificar que esté dentro del tablero, sea casilla oscura y esté vacía
     if (isInBounds(newRow, newCol) && isDarkSquare(newRow, newCol)) {
       const occupied = allPieces.some((p) => p.position.row === newRow && p.position.col === newCol)
 
@@ -66,7 +62,6 @@ export function getMouseValidMoves(mouse: CatAndMousePiece, allPieces: CatAndMou
         moves.push({
           from: mouse.position,
           to: { row: newRow, col: newCol },
-          piece: mouse,
         })
       }
     }
@@ -80,17 +75,16 @@ export function getCatValidMoves(cat: CatAndMousePiece, allPieces: CatAndMousePi
   const moves: CatAndMouseMove[] = []
   const { row, col } = cat.position
 
-  // Los gatos se mueven 1 casilla diagonal solo hacia adelante (desde fila 0 hacia fila 7)
+  // Los gatos se mueven 1 casilla diagonal SOLO hacia adelante (desde fila 0 hacia fila 7)
   const directions = [
     { dr: 1, dc: -1 }, // abajo-izquierda
-    { dr: 1, dc: 1 }, // abajo-derecha
+    { dr: 1, dc: 1 },  // abajo-derecha
   ]
 
   for (const { dr, dc } of directions) {
     const newRow = row + dr
     const newCol = col + dc
 
-    // Verificar que esté dentro del tablero, sea casilla oscura y esté vacía
     if (isInBounds(newRow, newCol) && isDarkSquare(newRow, newCol)) {
       const occupied = allPieces.some((p) => p.position.row === newRow && p.position.col === newCol)
 
@@ -98,7 +92,6 @@ export function getCatValidMoves(cat: CatAndMousePiece, allPieces: CatAndMousePi
         moves.push({
           from: cat.position,
           to: { row: newRow, col: newCol },
-          piece: cat,
         })
       }
     }
@@ -126,11 +119,11 @@ export function getValidMoves(
   }
 }
 
-// Aplicar un movimiento
+// Aplicar un movimiento (solo usa from/to, no depende de move.piece)
 export function applyMove(move: CatAndMouseMove, pieces: CatAndMousePiece[]): CatAndMousePiece[] {
   return pieces.map((p) => {
-    if (p.id === move.piece.id) {
-      return { ...p, position: move.to }
+    if (p.position.row === move.from.row && p.position.col === move.from.col) {
+      return { ...p, position: { ...move.to } }
     }
     return p
   })

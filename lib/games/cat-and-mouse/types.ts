@@ -12,5 +12,4 @@ export interface CatAndMousePiece {
 export interface CatAndMouseMove {
   from: Position
   to: Position
-  piece: CatAndMousePiece
 }
