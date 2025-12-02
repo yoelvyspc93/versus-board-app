@@ -4,6 +4,7 @@ import { useGameStore } from "@/lib/store"
 import { LobbyScreen } from "@/components/lobby-screen"
 import { GameScreen } from "@/components/game-screen"
 
+
 export default function Home() {
   const { state } = useGameStore()
 

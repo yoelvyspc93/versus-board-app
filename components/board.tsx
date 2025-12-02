@@ -3,11 +3,20 @@
 import { useGameStore } from "@/lib/store"
 import { Square } from "./square"
 import { Piece } from "./piece"
-import type { Position } from "@/lib/types"
-import { getValidMoves } from "@/lib/checkers-logic"
+import type { Position } from "@/lib/common/types"
+import {
+  getValidMoves as getCheckersValidMoves,
+  type CheckersPiece,
+  type CheckersMove,
+} from "@/lib/games/checkers/logic"
+import {
+  getValidMoves as getComeComeValidMoves,
+  type ComeComePiece,
+  type ComeComeMove,
+} from "@/lib/games/come-come/logic"
 
 export function Board() {
-  const { pieces, selectedPiece, selectPiece, currentTurn, localPlayer, movePiece, player1 } = useGameStore()
+  const { pieces, selectedPiece, selectPiece, currentTurn, localPlayer, movePiece, player1, gameType } = useGameStore()
 
   const isFlippedForLocal = !!localPlayer && !!player1 && localPlayer.id === player1.id
 
@@ -18,7 +27,13 @@ export function Board() {
     const pieceAtPosition = pieces.find((p) => p.position.row === position.row && p.position.col === position.col)
 
     if (selectedPiece) {
-      const validMoves = getValidMoves(selectedPiece, pieces, localPlayer.color)
+      let validMoves: (CheckersMove | ComeComeMove)[]
+      if (gameType === "checkers") {
+        validMoves = getCheckersValidMoves(selectedPiece, pieces as CheckersPiece[], localPlayer.color)
+      } else {
+        validMoves = getComeComeValidMoves(selectedPiece, pieces as ComeComePiece[], localPlayer.color)
+      }
+
       const isValidMove = validMoves.some((m) => m.to.row === position.row && m.to.col === position.col)
 
       if (isValidMove) {
@@ -35,17 +50,18 @@ export function Board() {
     }
   }
 
-  const validMoves = selectedPiece ? getValidMoves(selectedPiece, pieces, localPlayer?.color || "dark") : []
+  let validMoves: (CheckersMove | ComeComeMove)[] = []
+  if (selectedPiece && localPlayer) {
+    if (gameType === "checkers") {
+      validMoves = getCheckersValidMoves(selectedPiece, pieces as CheckersPiece[], localPlayer.color)
+    } else {
+      validMoves = getComeComeValidMoves(selectedPiece, pieces as ComeComePiece[], localPlayer.color)
+    }
+  }
 
   return (
     <div className="w-full max-w-2xl mx-auto">
-      <div
-        className="grid grid-cols-8 gap-0 border-[6px] border-[#6b5d56] rounded-2xl overflow-hidden shadow-2xl bg-[#f0e4d4]"
-        style={{
-          boxShadow:
-            "0 26px 70px rgba(0,0,0,0.4), 0 0 0 1px rgba(107,93,86,0.25), 0 0 25px rgba(255,200,150,0.7)",
-        }}
-      >
+      <div className="grid grid-cols-8 gap-0 border-[6px] border-[#6b5d56] rounded-2xl overflow-hidden shadow-2xl bg-[#f0e4d4]">
         {Array.from({ length: 64 }).map((_, index) => {
           const uiRow = Math.floor(index / 8)
           const uiCol = index % 8
@@ -79,9 +95,7 @@ export function Board() {
                   piece={piece}
                   isSelected={isSelected}
                   onClick={() => handleSquareClick(position)}
-                  isDisabled={
-                    !localPlayer || piece.color !== localPlayer.color || currentTurn !== localPlayer.color
-                  }
+                  isDisabled={!localPlayer || piece.color !== localPlayer.color || currentTurn !== localPlayer.color}
                 />
               )}
             </Square>

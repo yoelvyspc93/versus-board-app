@@ -34,6 +34,7 @@ export function Square({
         relative aspect-square w-full
         flex items-center justify-center
         transition-all duration-200
+        border border-[0.5px] border-neutral-900/50
         ${isLight ? "bg-[#f5f1e8]" : "bg-[#c79a6b]"}
         ${isValidMove || isCapture || hasPiece ? "cursor-pointer hover:brightness-105" : "cursor-default"}
       `}
