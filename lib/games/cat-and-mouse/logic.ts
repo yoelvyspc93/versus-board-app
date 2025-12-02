@@ -1,4 +1,3 @@
-// lib/cat-and-mouse/cat-and-mouse-logic.ts
 import type { Position, PlayerColor } from "@/lib/common/types"
 import type { CatAndMousePiece, CatAndMouseMove } from "./types"
 
