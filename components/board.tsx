@@ -1,39 +1,53 @@
 "use client"
 
+import { useMemo } from "react"
 import { useGameStore } from "@/lib/store"
 import { Square } from "./square"
 import { Piece } from "./piece"
-import type { Position, BaseMove } from "@/lib/common/types"
-import { getValidMoves as getCheckersValidMoves, type CheckersPiece } from "@/lib/games/checkers/logic"
-import { getValidMoves as getComeComeValidMoves, type ComeComePiece } from "@/lib/games/come-come/logic"
-import { getValidMoves as getCatAndMouseValidMoves, type CatAndMousePiece } from "@/lib/games/cat-and-mouse/logic"
+import type { Position, BaseMove, BasePiece } from "@/lib/common/types"
 
 export function Board() {
-  const { pieces, selectedPiece, selectPiece, currentTurn, localPlayer, movePiece, player1, gameType } = useGameStore()
+  const { pieces, selectedPiece, selectPiece, currentTurn, localPlayer, movePiece, player1, gameType, validMoves } =
+    useGameStore()
 
-  const isFlippedForLocal = !!localPlayer && !!player1 && localPlayer.id === player1.id
+  let isFlippedForLocal = false
+  if (localPlayer) {
+    if (gameType === "cat-and-mouse") {
+      // En Gato y Ratón, los Gatos (light) están en la fila 0 (arriba).
+      // Si soy Gato, invierto el tablero para ver mis piezas abajo.
+      isFlippedForLocal = localPlayer.color === "light"
+    } else {
+      // En Damas, el Player 1 siempre empieza en las filas superiores.
+      isFlippedForLocal = !!player1 && localPlayer.id === player1.id
+    }
+  }
+
+  // Optimización 1: Mapas de búsqueda rápida O(1)
+  const piecesMap = useMemo(() => {
+    const map = new Map<string, BasePiece>()
+    for (const p of pieces) {
+      map.set(`${p.position.row}-${p.position.col}`, p)
+    }
+    return map
+  }, [pieces])
+
+  const validMovesMap = useMemo(() => {
+    const map = new Map<string, BaseMove>()
+    for (const m of validMoves) {
+      map.set(`${m.to.row}-${m.to.col}`, m)
+    }
+    return map
+  }, [validMoves])
 
   const handleSquareClick = (position: Position) => {
     if (!localPlayer) return
     if (currentTurn !== localPlayer.color) return
 
-    const pieceAtPosition = pieces.find((p) => p.position.row === position.row && p.position.col === position.col)
+    const pieceAtPosition = piecesMap.get(`${position.row}-${position.col}`)
+    const move = validMovesMap.get(`${position.row}-${position.col}`)
 
     if (selectedPiece) {
-      let validMoves: BaseMove[] = []
-
-      if (gameType === "checkers") {
-        validMoves = getCheckersValidMoves(selectedPiece, pieces as CheckersPiece[], localPlayer.color)
-      } else if (gameType === "come-come") {
-        validMoves = getComeComeValidMoves(selectedPiece, pieces as ComeComePiece[], localPlayer.color)
-      } else if (gameType === "cat-and-mouse") {
-        validMoves = getCatAndMouseValidMoves(selectedPiece, pieces as CatAndMousePiece[], localPlayer.color)
-      }
-
-      const isValidMove = validMoves.some((m) => m.to.row === position.row && m.to.col === position.col)
-
-      if (isValidMove) {
-        const move = validMoves.find((m) => m.to.row === position.row && m.to.col === position.col)!
+      if (move) {
         movePiece(move)
         selectPiece(null)
       } else if (pieceAtPosition && pieceAtPosition.color === localPlayer.color) {
@@ -43,17 +57,6 @@ export function Board() {
       }
     } else if (pieceAtPosition && pieceAtPosition.color === localPlayer.color) {
       selectPiece(position)
-    }
-  }
-
-  let validMoves: BaseMove[] = []
-  if (selectedPiece && localPlayer) {
-    if (gameType === "checkers") {
-      validMoves = getCheckersValidMoves(selectedPiece, pieces as CheckersPiece[], localPlayer.color)
-    } else if (gameType === "come-come") {
-      validMoves = getComeComeValidMoves(selectedPiece, pieces as ComeComePiece[], localPlayer.color)
-    } else if (gameType === "cat-and-mouse") {
-      validMoves = getCatAndMouseValidMoves(selectedPiece, pieces as CatAndMousePiece[], localPlayer.color)
     }
   }
 
@@ -68,12 +71,15 @@ export function Board() {
           const col = isFlippedForLocal ? 7 - uiCol : uiCol
 
           const position: Position = { row, col }
+          const key = `${row}-${col}`
+          
           const isLight = (row + col) % 2 === 0
-
-          const piece = pieces.find((p) => p.position.row === row && p.position.col === col)
+          
+          // Optimización: Búsqueda en mapa O(1)
+          const piece = piecesMap.get(key)
+          const validMove = validMovesMap.get(key)
+          
           const isSelected = selectedPiece?.row === row && selectedPiece?.col === col
-
-          const validMove = validMoves.find((m) => m.to.row === row && m.to.col === col)
           const isValidMove = !!validMove
           const isCapture =
             gameType !== "cat-and-mouse" && !!validMove?.capturedPieces && validMove.capturedPieces.length > 0
@@ -81,7 +87,7 @@ export function Board() {
 
           return (
             <Square
-              key={`${row}-${col}`}
+              key={key}
               position={position}
               isLight={isLight}
               isValidMove={isValidMove}

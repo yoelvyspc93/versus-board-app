@@ -15,9 +15,8 @@ export function CatMousePiece({ type, color, isSelected, isDisabled, onClick }: 
   const isMouse = type === "mouse"
 
   return (
-    <motion.button
+    <motion.div
       onClick={onClick}
-      disabled={isDisabled}
       className={`
         relative w-full h-full rounded-full
         transition-all duration-200
@@ -87,6 +86,6 @@ export function CatMousePiece({ type, color, isSelected, isDisabled, onClick }: 
           </svg>
         )}
       </div>
-    </motion.button>
+    </motion.div>
   )
 }

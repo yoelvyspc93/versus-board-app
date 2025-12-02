@@ -1,34 +1,7 @@
 import { create } from "zustand"
-import type { Position, Player, PlayerColor, GameType, GameState, BaseMove } from "./common/types"
+import type { Position, Player, PlayerColor, GameType, GameState, BaseMove, BasePiece } from "./common/types"
 import { GameConnection } from "./common/connection"
-import {
-  initializeCheckersPieces,
-  applyMove as applyCheckersMove,
-  hasPlayerLost as checkersHasPlayerLost,
-  getContinuousCaptures as getCheckersContinuousCaptures,
-  hasAnyCaptures as checkersHasAnyCaptures,
-  type CheckersPiece,
-  type CheckersMove,
-} from "./games/checkers/logic"
-import {
-  initializeComeComePieces,
-  applyMove as applyComeComeMove,
-  hasPlayerLost as comeComeHasPlayerLost,
-  getContinuousCaptures as getComeComeContinuousCaptures,
-  hasAnyCaptures as comeComeHasAnyCaptures,
-  type ComeComePiece,
-  type ComeComeMove,
-} from "./games/come-come/logic"
-import {
-  initializeCatAndMousePieces,
-  applyMove as applyCatAndMouseMove,
-  hasPlayerLost as catAndMouseHasPlayerLost,
-  type CatAndMousePiece,
-  type CatAndMouseMove,
-} from "./games/cat-and-mouse/logic"
-
-type GamePiece = CheckersPiece | ComeComePiece | CatAndMousePiece
-type GameMove = CheckersMove | ComeComeMove | CatAndMouseMove
+import { GameEngine } from "./game-engine"
 
 interface GameStore {
   state: GameState
@@ -40,9 +13,9 @@ interface GameStore {
   connection: GameConnection | null
   localPlayer: Player | null
   remotePeerId: string | null
-  pieces: GamePiece[]
+  pieces: BasePiece[]
   selectedPiece: Position | null
-  validMoves: Position[]
+  validMoves: BaseMove[]
   mustCapture: boolean
   continuousCapture: boolean
 
@@ -101,6 +74,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
             player1Color = isPlayer1Mouse ? "dark" : "light"
             player2Color = isPlayer1Mouse ? "light" : "dark"
           } else {
+            // Damas / Come-Come: random piezas oscuras vs claras
             const randomColor = Math.random() > 0.5 ? "dark" : "light"
             player1Color = randomColor
             player2Color = player1Color === "dark" ? "light" : "dark"
@@ -112,17 +86,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
             color: player2Color,
           }
 
-          let newPieces: GamePiece[]
-          if (gameType === "checkers") {
-            newPieces = initializeCheckersPieces(player1Color)
-          } else if (gameType === "come-come") {
-            newPieces = initializeComeComePieces(player1Color)
-          } else if (gameType === "cat-and-mouse") {
-            // Ratón (oscuro) siempre empieza
-            newPieces = initializeCatAndMousePieces("dark")
-          } else {
-            newPieces = []
-          }
+          const engine = GameEngine.get(gameType)
+          const newPieces = engine.initializePieces(player1Color)
 
           set({
             player1: { ...localPlayer, color: player1Color },
@@ -161,8 +126,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
         remotePeerId: peerId,
       })
     } catch (error) {
-      console.error("[v0] Error creating game:", error)
-      alert(`Error al crear partida: ${error instanceof Error ? error.message : "Error desconocido"}`)
+      console.error("[VersusBoard] Error creating game:", error)
+      alert(`Error al crear la partida: ${error instanceof Error ? error.message : "Error desconocido"}`)
       set({ state: "no-game" })
     }
   },
@@ -180,7 +145,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         if (data.type === "start") {
           const yourColor = data.yourColor as PlayerColor
           const opponentName = data.opponentName
-          const pieces = data.pieces as GamePiece[]
+          const pieces = data.pieces as BasePiece[]
           const gameType = data.gameType as GameType
 
           set({
@@ -213,54 +178,46 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
       set({ connection })
     } catch (error) {
-      console.error("[v0] Error joining game:", error)
+      console.error("[VersusBoard] Error joining game:", error)
       alert(`Error al unirse a la partida: ${error instanceof Error ? error.message : "Error desconocido"}`)
       set({ state: "no-game" })
     }
   },
 
   selectPiece: (position: Position | null) => {
-    set({ selectedPiece: position })
+    const { pieces, gameType, currentTurn } = get()
+    
+    if (!position) {
+      set({ selectedPiece: null, validMoves: [] })
+      return
+    }
+
+    const engine = GameEngine.get(gameType)
+    const moves = engine.getValidMoves(position, pieces, currentTurn)
+    
+    set({ selectedPiece: position, validMoves: moves })
   },
 
   movePiece: (move: BaseMove) => {
     const { connection, pieces, currentTurn, player1, player2, gameType } = get()
+    const engine = GameEngine.get(gameType)
 
-    let newPieces: GamePiece[]
+    // 1. Aplicar movimiento
+    const newPieces = engine.applyMove(move, pieces)
+    
+    // 2. Verificar capturas continuas
     let continuousCaptures: BaseMove[] = []
-    let hasCaptures = false
-
-    if (gameType === "checkers") {
-      newPieces = applyCheckersMove(move as CheckersMove, pieces as CheckersPiece[])
-      if (move.capturedPieces && move.capturedPieces.length > 0) {
-        continuousCaptures = getCheckersContinuousCaptures(move.to, newPieces as CheckersPiece[], currentTurn)
-      }
-      hasCaptures = checkersHasAnyCaptures(newPieces as CheckersPiece[], currentTurn === "dark" ? "light" : "dark")
-    } else if (gameType === "come-come") {
-      newPieces = applyComeComeMove(move as ComeComeMove, pieces as ComeComePiece[])
-      if (move.capturedPieces && move.capturedPieces.length > 0) {
-        continuousCaptures = getComeComeContinuousCaptures(move.to, newPieces as ComeComePiece[], currentTurn)
-      }
-      hasCaptures = comeComeHasAnyCaptures(newPieces as ComeComePiece[], currentTurn === "dark" ? "light" : "dark")
-    } else if (gameType === "cat-and-mouse") {
-      newPieces = applyCatAndMouseMove(move as CatAndMouseMove, pieces as CatAndMousePiece[])
-      continuousCaptures = []
-      hasCaptures = false
-    } else {
-      newPieces = pieces
+    if (move.capturedPieces && move.capturedPieces.length > 0 && !move.promotion) {
+      continuousCaptures = engine.getContinuousCaptures(move.to, newPieces, currentTurn)
     }
 
-    // Si hubo coronación, NO permitimos capturas encadenadas
-    if (move.promotion) {
-      continuousCaptures = []
-    }
-
-    // Capturas encadenadas (solo Damas / Come-Come, si no hubo coronación)
     if (continuousCaptures.length > 0) {
       set({
         pieces: newPieces,
         selectedPiece: move.to,
         continuousCapture: true,
+        // Actualizar movimientos válidos para la captura continua
+        validMoves: continuousCaptures
       })
 
       if (connection) {
@@ -269,7 +226,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
       return
     }
 
+    // 3. Cambio de turno
     const nextTurn: PlayerColor = currentTurn === "dark" ? "light" : "dark"
+    const hasCaptures = engine.hasAnyCaptures(newPieces, nextTurn)
 
     set({
       pieces: newPieces,
@@ -280,28 +239,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
       mustCapture: hasCaptures,
     })
 
-    const opponent = nextTurn === player1?.color ? player1 : player2
-    let playerLost = false
-
-    if (gameType === "checkers") {
-      playerLost = opponent ? checkersHasPlayerLost(newPieces as CheckersPiece[], nextTurn) : false
-    } else if (gameType === "come-come") {
-      playerLost = opponent ? comeComeHasPlayerLost(newPieces as ComeComePiece[], nextTurn) : false
-    } else if (gameType === "cat-and-mouse") {
-      playerLost = opponent ? catAndMouseHasPlayerLost(newPieces as CatAndMousePiece[], nextTurn) : false
-    }
+    // 4. Verificar victoria/derrota
+    // Nota: hasPlayerLost verifica si el jugador `playerColor` (nextTurn) ha perdido
+    const playerLost = engine.hasPlayerLost(newPieces, nextTurn)
 
     if (playerLost) {
-      let winner: Player | null = null
-
-      if (gameType === "come-come") {
-        // Come-Come: misère, gana el que se queda sin piezas / sin movimientos
-        winner = opponent ?? null
-      } else {
-        // Damas y Gato y Ratón: gana quien hizo el último movimiento
-        winner = currentTurn === player1?.color ? player1 ?? null : player2 ?? null
-      }
-
+      const winnerColor = engine.getWinner(newPieces, nextTurn, player1?.color || "dark")
+      const winner = winnerColor === player1?.color ? player1 : player2
+      
       if (winner) {
         set({ winner, state: "finished" })
       }
@@ -313,46 +258,33 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   handleRemoteMove: (move: BaseMove) => {
+    // Reutilizar lógica es complicado porque movePiece hace set() y side effects.
+    // Mejor replicar lógica "pura" pero actualizando el estado local.
+    // Ojo: handleRemoteMove es IDÉNTICO a movePiece salvo que NO envía el movimiento por red.
+    // Podríamos refactorizar para tener una función `applyGameMove(move, isRemote)` interna.
+    // Por ahora, copiaré la lógica para asegurar estabilidad.
+
     const { pieces, currentTurn, player1, player2, gameType } = get()
+    const engine = GameEngine.get(gameType)
 
-    let newPieces: GamePiece[]
+    const newPieces = engine.applyMove(move, pieces)
+    
     let continuousCaptures: BaseMove[] = []
-    let hasCaptures = false
-
-    if (gameType === "checkers") {
-      newPieces = applyCheckersMove(move as CheckersMove, pieces as CheckersPiece[])
-      if (move.capturedPieces && move.capturedPieces.length > 0) {
-        continuousCaptures = getCheckersContinuousCaptures(move.to, newPieces as CheckersPiece[], currentTurn)
-      }
-      hasCaptures = checkersHasAnyCaptures(newPieces as CheckersPiece[], currentTurn === "dark" ? "light" : "dark")
-    } else if (gameType === "come-come") {
-      newPieces = applyComeComeMove(move as ComeComeMove, pieces as ComeComePiece[])
-      if (move.capturedPieces && move.capturedPieces.length > 0) {
-        continuousCaptures = getComeComeContinuousCaptures(move.to, newPieces as ComeComePiece[], currentTurn)
-      }
-      hasCaptures = comeComeHasAnyCaptures(newPieces as ComeComePiece[], currentTurn === "dark" ? "light" : "dark")
-    } else if (gameType === "cat-and-mouse") {
-      newPieces = applyCatAndMouseMove(move as CatAndMouseMove, pieces as CatAndMousePiece[])
-      continuousCaptures = []
-      hasCaptures = false
-    } else {
-      newPieces = pieces
-    }
-
-    // Si hubo coronación, NO permitimos capturas encadenadas
-    if (move.promotion) {
-      continuousCaptures = []
+    if (move.capturedPieces && move.capturedPieces.length > 0 && !move.promotion) {
+      continuousCaptures = engine.getContinuousCaptures(move.to, newPieces, currentTurn)
     }
 
     if (continuousCaptures.length > 0) {
       set({
         pieces: newPieces,
         continuousCapture: true,
+        // No necesitamos validMoves aquí porque no somos nosotros moviendo
       })
       return
     }
 
     const nextTurn: PlayerColor = currentTurn === "dark" ? "light" : "dark"
+    const hasCaptures = engine.hasAnyCaptures(newPieces, nextTurn)
 
     set({
       pieces: newPieces,
@@ -363,28 +295,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
       mustCapture: hasCaptures,
     })
 
-    const opponent = nextTurn === player1?.color ? player1 : player2
-    let playerLost = false
-
-    if (gameType === "checkers") {
-      playerLost = opponent ? checkersHasPlayerLost(newPieces as CheckersPiece[], nextTurn) : false
-    } else if (gameType === "come-come") {
-      playerLost = opponent ? comeComeHasPlayerLost(newPieces as ComeComePiece[], nextTurn) : false
-    } else if (gameType === "cat-and-mouse") {
-      playerLost = opponent ? catAndMouseHasPlayerLost(newPieces as CatAndMousePiece[], nextTurn) : false
-    }
+    const playerLost = engine.hasPlayerLost(newPieces, nextTurn)
 
     if (playerLost) {
-      let winner: Player | null = null
-
-      if (gameType === "come-come") {
-        // Come-Come: misère, gana el que se queda sin piezas / sin movimientos
-        winner = opponent ?? null
-      } else {
-        // Damas y Gato y Ratón: gana quien hizo el último movimiento
-        winner = currentTurn === player1?.color ? player1 ?? null : player2 ?? null
-      }
-
+      const winnerColor = engine.getWinner(newPieces, nextTurn, player1?.color || "dark")
+      const winner = winnerColor === player1?.color ? player1 : player2
+      
       if (winner) {
         set({ winner, state: "finished" })
       }

@@ -16,9 +16,8 @@ export function CheckerPiece({ color, isKing, isSelected, isDisabled, onClick }:
   const isLight = color === "light"
 
   return (
-    <motion.button
+    <motion.div
       onClick={onClick}
-      disabled={isDisabled}
       className={`
         relative w-full h-full rounded-full
         transition-all duration-200
@@ -59,6 +58,6 @@ export function CheckerPiece({ color, isKing, isSelected, isDisabled, onClick }:
           />
         </motion.div>
       )}
-    </motion.button>
+    </motion.div>
   )
 }

@@ -1,5 +1,6 @@
 "use client"
 
+import { memo } from "react"
 import type { BasePiece, GameType } from "@/lib/common/types"
 import { getPieceCategory } from "@/lib/common/types"
 import { CheckerPiece } from "./pieces/checker-piece"
@@ -13,7 +14,7 @@ interface PieceProps {
   isDisabled: boolean
 }
 
-export function Piece({ piece, gameType, isSelected, onClick, isDisabled }: PieceProps) {
+export const Piece = memo(function Piece({ piece, gameType, isSelected, onClick, isDisabled }: PieceProps) {
   const category = getPieceCategory(piece, gameType)
 
   switch (category) {
@@ -62,4 +63,4 @@ export function Piece({ piece, gameType, isSelected, onClick, isDisabled }: Piec
     default:
       return null
   }
-}
+})
