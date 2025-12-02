@@ -75,15 +75,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   fetchRooms: async () => {
-    try {
-      const res = await fetch("/api/rooms")
-      if (res.ok) {
-        const rooms = await res.json()
-        set({ availableRooms: rooms })
-      }
-    } catch (error) {
-      console.error("Failed to fetch rooms:", error)
-    }
+    // Static site mode: No public room listing available without backend
+    set({ availableRooms: [] })
   },
 
   createRoom: async (roomName: string) => {
@@ -106,17 +99,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
       const peerId = await connection.initialize(roomName, true)
 
-      // Register room in API
-      await fetch("/api/rooms", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "register",
-          id: peerId,
-          name: roomName
-        })
-      })
-
       connection.onMessage((data) => {
         const { state } = get()
 
@@ -138,20 +120,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
             type: "welcome",
             hostName: localPlayer.name
           })
-
-          // Unregister room from list so others don't try to join full room?
-          // Or keep it visible but show "Full"? For now, simple: unregister when full/started might be better
-          // But let's leave it for now or remove it? 
-          // "Serverless P2P" means we probably should remove it from the list if we only support 1v1.
-          // Let's remove it from the public list once a player joins.
-          fetch("/api/rooms", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              type: "unregister",
-              id: peerId
-            })
-          }).catch(err => console.error("Failed to unregister room:", err))
 
         } else if (data.type === "start_game") {
           // Handled in guest logic, but host initiates usually. 
@@ -415,18 +383,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   resetGame: () => {
     const { connection, isHost, currentRoomId } = get()
-
-    // If host, remove from registry (just in case it wasn't removed on join)
-    if (isHost && currentRoomId) {
-      fetch("/api/rooms", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          type: "unregister",
-          id: currentRoomId
-        })
-      }).catch(err => console.error("Failed to unregister room:", err))
-    }
 
     if (connection) {
       connection.disconnect()
