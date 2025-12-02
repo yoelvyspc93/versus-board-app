@@ -1,5 +1,5 @@
 import { create } from "zustand"
-import type { Position, Player, PlayerColor, GameType, GameState } from "./common/types"
+import type { Position, Player, PlayerColor, GameType, GameState, BaseMove } from "./common/types"
 import { GameConnection } from "./common/connection"
 import {
   initializeCheckersPieces,
@@ -52,9 +52,9 @@ interface GameStore {
   createGame: () => Promise<void>
   joinGame: () => Promise<void>
   selectPiece: (position: Position | null) => void
-  movePiece: (move: GameMove) => void
+  movePiece: (move: BaseMove) => void
   resetGame: () => void
-  handleRemoteMove: (move: GameMove) => void
+  handleRemoteMove: (move: BaseMove) => void
   setWinner: (player: Player) => void
 }
 
@@ -87,18 +87,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!localPlayer) return
 
     try {
-      console.log("[v0] Creating game as host with game type:", gameType)
       const connection = new GameConnection()
       const peerId = await connection.initialize(true)
-      console.log("[v0] Host initialized with ID:", peerId)
 
       connection.onMessage((data) => {
-        console.log("[v0] Host received message:", data.type)
         if (data.type === "join") {
           let player1Color: PlayerColor
           let player2Color: PlayerColor
 
           if (gameType === "cat-and-mouse") {
+            // Randomly assign who plays mouse (dark) vs cats (light)
             const isPlayer1Mouse = Math.random() > 0.5
             player1Color = isPlayer1Mouse ? "dark" : "light"
             player2Color = isPlayer1Mouse ? "light" : "dark"
@@ -120,14 +118,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
           } else if (gameType === "come-come") {
             newPieces = initializeComeComePieces(player1Color)
           } else if (gameType === "cat-and-mouse") {
-            const mouseColor = "dark"
-            newPieces = initializeCatAndMousePieces(mouseColor)
+            // Mouse color is always "dark" (mouse moves first)
+            newPieces = initializeCatAndMousePieces("dark")
           } else {
             newPieces = []
           }
-
-          console.log("[v0] Colors assigned - P1:", player1Color, "P2:", player2Color)
-          console.log("[v0] Game starting with pieces:", newPieces.length)
 
           set({
             player1: { ...localPlayer, color: player1Color },
@@ -177,22 +172,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!localPlayer) return
 
     try {
-      console.log("[v0] Joining game as guest...")
       const connection = new GameConnection()
       await connection.initialize(false)
       await connection.connect(5)
-      console.log("[v0] Guest connected successfully")
 
       connection.onMessage((data) => {
-        console.log("[v0] Guest received message:", data.type)
         if (data.type === "start") {
           const yourColor = data.yourColor as PlayerColor
           const opponentName = data.opponentName
           const pieces = data.pieces as GamePiece[]
           const gameType = data.gameType as GameType
-
-          console.log("[v0] Game started - Your color:", yourColor, "Game type:", gameType)
-          console.log("[v0] Received pieces:", pieces.length)
 
           set({
             player1: { id: "remote", name: opponentName, color: yourColor === "dark" ? "light" : "dark" },
@@ -231,36 +220,27 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   selectPiece: (position: Position | null) => {
-    const { localPlayer, pieces } = get()
-    if (position) {
-      const piece = pieces.find((p) => p.position.row === position.row && p.position.col === position.col)
-      console.log("[v0] Selecting piece:", piece, "Local player color:", localPlayer?.color)
-    }
     set({ selectedPiece: position })
   },
 
-  movePiece: (move: GameMove) => {
+  movePiece: (move: BaseMove) => {
     const { connection, pieces, currentTurn, player1, player2, gameType } = get()
 
-    console.log("[v0] Moving piece from", move.from, "to", move.to, "Current turn:", currentTurn)
-
     let newPieces: GamePiece[]
-    let continuousCaptures: GameMove[]
-    let hasCaptures: boolean
+    let continuousCaptures: BaseMove[] = []
+    let hasCaptures = false
 
     if (gameType === "checkers") {
       newPieces = applyCheckersMove(move as CheckersMove, pieces as CheckersPiece[])
-      continuousCaptures =
-        move.capturedPieces && move.capturedPieces.length > 0
-          ? getCheckersContinuousCaptures(move.to, newPieces as CheckersPiece[], currentTurn)
-          : []
+      if (move.capturedPieces && move.capturedPieces.length > 0) {
+        continuousCaptures = getCheckersContinuousCaptures(move.to, newPieces as CheckersPiece[], currentTurn)
+      }
       hasCaptures = checkersHasAnyCaptures(newPieces as CheckersPiece[], currentTurn === "dark" ? "light" : "dark")
     } else if (gameType === "come-come") {
       newPieces = applyComeComeMove(move as ComeComeMove, pieces as ComeComePiece[])
-      continuousCaptures =
-        move.capturedPieces && move.capturedPieces.length > 0
-          ? getComeComeContinuousCaptures(move.to, newPieces as ComeComePiece[], currentTurn)
-          : []
+      if (move.capturedPieces && move.capturedPieces.length > 0) {
+        continuousCaptures = getComeComeContinuousCaptures(move.to, newPieces as ComeComePiece[], currentTurn)
+      }
       hasCaptures = comeComeHasAnyCaptures(newPieces as ComeComePiece[], currentTurn === "dark" ? "light" : "dark")
     } else if (gameType === "cat-and-mouse") {
       newPieces = applyCatAndMouseMove(move as CatAndMouseMove, pieces as CatAndMousePiece[])
@@ -268,12 +248,10 @@ export const useGameStore = create<GameStore>((set, get) => ({
       hasCaptures = false
     } else {
       newPieces = pieces
-      continuousCaptures = []
-      hasCaptures = false
     }
 
+    // Handle continuous captures for checkers/come-come
     if (continuousCaptures.length > 0) {
-      console.log("[v0] Continuous capture available")
       set({
         pieces: newPieces,
         selectedPiece: move.to,
@@ -287,7 +265,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
 
     const nextTurn: PlayerColor = currentTurn === "dark" ? "light" : "dark"
-    console.log("[v0] Turn changing to:", nextTurn)
 
     set({
       pieces: newPieces,
@@ -298,16 +275,16 @@ export const useGameStore = create<GameStore>((set, get) => ({
       mustCapture: hasCaptures,
     })
 
+    // Check for winner
     const opponent = nextTurn === player1?.color ? player1 : player2
-    let playerLost: boolean
+    let playerLost = false
+
     if (gameType === "checkers") {
       playerLost = opponent ? checkersHasPlayerLost(newPieces as CheckersPiece[], nextTurn) : false
     } else if (gameType === "come-come") {
       playerLost = opponent ? comeComeHasPlayerLost(newPieces as ComeComePiece[], nextTurn) : false
     } else if (gameType === "cat-and-mouse") {
       playerLost = opponent ? catAndMouseHasPlayerLost(newPieces as CatAndMousePiece[], nextTurn) : false
-    } else {
-      playerLost = false
     }
 
     if (playerLost) {
@@ -322,26 +299,24 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
   },
 
-  handleRemoteMove: (move: GameMove) => {
+  handleRemoteMove: (move: BaseMove) => {
     const { pieces, currentTurn, player1, player2, gameType } = get()
 
     let newPieces: GamePiece[]
-    let continuousCaptures: GameMove[]
-    let hasCaptures: boolean
+    let continuousCaptures: BaseMove[] = []
+    let hasCaptures = false
 
     if (gameType === "checkers") {
       newPieces = applyCheckersMove(move as CheckersMove, pieces as CheckersPiece[])
-      continuousCaptures =
-        move.capturedPieces && move.capturedPieces.length > 0
-          ? getCheckersContinuousCaptures(move.to, newPieces as CheckersPiece[], currentTurn)
-          : []
+      if (move.capturedPieces && move.capturedPieces.length > 0) {
+        continuousCaptures = getCheckersContinuousCaptures(move.to, newPieces as CheckersPiece[], currentTurn)
+      }
       hasCaptures = checkersHasAnyCaptures(newPieces as CheckersPiece[], currentTurn === "dark" ? "light" : "dark")
     } else if (gameType === "come-come") {
       newPieces = applyComeComeMove(move as ComeComeMove, pieces as ComeComePiece[])
-      continuousCaptures =
-        move.capturedPieces && move.capturedPieces.length > 0
-          ? getComeComeContinuousCaptures(move.to, newPieces as ComeComePiece[], currentTurn)
-          : []
+      if (move.capturedPieces && move.capturedPieces.length > 0) {
+        continuousCaptures = getComeComeContinuousCaptures(move.to, newPieces as ComeComePiece[], currentTurn)
+      }
       hasCaptures = comeComeHasAnyCaptures(newPieces as ComeComePiece[], currentTurn === "dark" ? "light" : "dark")
     } else if (gameType === "cat-and-mouse") {
       newPieces = applyCatAndMouseMove(move as CatAndMouseMove, pieces as CatAndMousePiece[])
@@ -349,8 +324,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       hasCaptures = false
     } else {
       newPieces = pieces
-      continuousCaptures = []
-      hasCaptures = false
     }
 
     if (continuousCaptures.length > 0) {
@@ -373,15 +346,14 @@ export const useGameStore = create<GameStore>((set, get) => ({
     })
 
     const opponent = nextTurn === player1?.color ? player1 : player2
-    let playerLost: boolean
+    let playerLost = false
+
     if (gameType === "checkers") {
       playerLost = opponent ? checkersHasPlayerLost(newPieces as CheckersPiece[], nextTurn) : false
     } else if (gameType === "come-come") {
       playerLost = opponent ? comeComeHasPlayerLost(newPieces as ComeComePiece[], nextTurn) : false
     } else if (gameType === "cat-and-mouse") {
       playerLost = opponent ? catAndMouseHasPlayerLost(newPieces as CatAndMousePiece[], nextTurn) : false
-    } else {
-      playerLost = false
     }
 
     if (playerLost) {

@@ -1,64 +1,65 @@
 "use client"
 
-import type { Piece as PieceType } from "@/lib/types"
-import { Crown } from "lucide-react"
-import { motion } from "framer-motion"
+import type { BasePiece, GameType } from "@/lib/common/types"
+import { getPieceCategory } from "@/lib/common/types"
+import { CheckerPiece } from "./pieces/checker-piece"
+import { CatMousePiece } from "./pieces/cat-mouse-piece"
 
 interface PieceProps {
-  piece: PieceType
+  piece: BasePiece
+  gameType: GameType
   isSelected: boolean
   onClick: () => void
   isDisabled: boolean
 }
 
-export function Piece({ piece, isSelected, onClick, isDisabled }: PieceProps) {
-  const isLight = piece.color === "light"
-  const isKing = piece.type === "king"
+export function Piece({ piece, gameType, isSelected, onClick, isDisabled }: PieceProps) {
+  const category = getPieceCategory(piece, gameType)
 
-  return (
-    <motion.button
-      onClick={onClick}
-      disabled={isDisabled}
-      className={`
-        relative w-full h-full rounded-full
-        transition-all duration-200
-        ${isDisabled ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:scale-105"}
-        ${isSelected ? "scale-110 shadow-xl" : "shadow-lg"}
-      `}
-      style={{
-        background: isLight
-          ? "radial-gradient(circle at 30% 30%, #f9e7c3, #e8d4a8)"
-          : "radial-gradient(circle at 30% 30%, #a24826, #8b3b20)",
-        border: `3px solid ${isLight ? "#d4c3a0" : "#6b2f1a"}`,
-        boxShadow: isSelected
-          ? "0 8px 20px rgba(0,0,0,0.45), 0 0 18px rgba(255,200,150,0.6), inset 0 2px 4px rgba(255,255,255,0.3)"
-          : "0 4px 14px rgba(0,0,0,0.35), inset 0 2px 4px rgba(255,255,255,0.2)",
-      }}
-      initial={false}
-      animate={isKing ? { scale: [1, 1.2, 1] } : {}}
-      transition={{ duration: 0.3 }}
-    >
-      <div
-        className="absolute inset-0 rounded-full opacity-30"
-        style={{
-          background: `conic-gradient(from 0deg, transparent 0deg, #ffffff 90deg, transparent 180deg)`,
-        }}
-      />
+  switch (category) {
+    case "checker":
+    case "checker-king":
+      return (
+        <CheckerPiece
+          color={piece.color}
+          isKing={category === "checker-king"}
+          isSelected={isSelected}
+          isDisabled={isDisabled}
+          onClick={onClick}
+        />
+      )
 
-      {isKing && (
-        <motion.div
-          className="absolute inset-0 flex items-center justify-center"
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: "spring", stiffness: 500, damping: 15 }}
-        >
-          <Crown
-            className={`w-1/2 h-1/2 ${isLight ? "text-[#8b7355]" : "text-[#f9e7c3]"}`}
-            strokeWidth={2.5}
-            fill="currentColor"
-          />
-        </motion.div>
-      )}
-    </motion.button>
-  )
+    case "mouse":
+    case "cat":
+      return (
+        <CatMousePiece
+          type={category as "mouse" | "cat"}
+          color={piece.color}
+          isSelected={isSelected}
+          isDisabled={isDisabled}
+          onClick={onClick}
+        />
+      )
+
+    // Future chess pieces will be added here
+    case "chess-pawn":
+    case "chess-rook":
+    case "chess-knight":
+    case "chess-bishop":
+    case "chess-queen":
+    case "chess-king":
+      // Placeholder for chess - will be implemented later
+      return (
+        <CheckerPiece
+          color={piece.color}
+          isKing={false}
+          isSelected={isSelected}
+          isDisabled={isDisabled}
+          onClick={onClick}
+        />
+      )
+
+    default:
+      return null
+  }
 }

@@ -3,17 +3,10 @@
 import { useGameStore } from "@/lib/store"
 import { Square } from "./square"
 import { Piece } from "./piece"
-import type { Position } from "@/lib/common/types"
-import {
-  getValidMoves as getCheckersValidMoves,
-  type CheckersPiece,
-  type CheckersMove,
-} from "@/lib/games/checkers/logic"
-import {
-  getValidMoves as getComeComeValidMoves,
-  type ComeComePiece,
-  type ComeComeMove,
-} from "@/lib/games/come-come/logic"
+import type { Position, BaseMove } from "@/lib/common/types"
+import { getValidMoves as getCheckersValidMoves, type CheckersPiece } from "@/lib/games/checkers/logic"
+import { getValidMoves as getComeComeValidMoves, type ComeComePiece } from "@/lib/games/come-come/logic"
+import { getValidMoves as getCatAndMouseValidMoves, type CatAndMousePiece } from "@/lib/games/cat-and-mouse/logic"
 
 export function Board() {
   const { pieces, selectedPiece, selectPiece, currentTurn, localPlayer, movePiece, player1, gameType } = useGameStore()
@@ -27,11 +20,14 @@ export function Board() {
     const pieceAtPosition = pieces.find((p) => p.position.row === position.row && p.position.col === position.col)
 
     if (selectedPiece) {
-      let validMoves: (CheckersMove | ComeComeMove)[]
+      let validMoves: BaseMove[] = []
+
       if (gameType === "checkers") {
         validMoves = getCheckersValidMoves(selectedPiece, pieces as CheckersPiece[], localPlayer.color)
-      } else {
+      } else if (gameType === "come-come") {
         validMoves = getComeComeValidMoves(selectedPiece, pieces as ComeComePiece[], localPlayer.color)
+      } else if (gameType === "cat-and-mouse") {
+        validMoves = getCatAndMouseValidMoves(selectedPiece, pieces as CatAndMousePiece[], localPlayer.color)
       }
 
       const isValidMove = validMoves.some((m) => m.to.row === position.row && m.to.col === position.col)
@@ -50,12 +46,14 @@ export function Board() {
     }
   }
 
-  let validMoves: (CheckersMove | ComeComeMove)[] = []
+  let validMoves: BaseMove[] = []
   if (selectedPiece && localPlayer) {
     if (gameType === "checkers") {
       validMoves = getCheckersValidMoves(selectedPiece, pieces as CheckersPiece[], localPlayer.color)
-    } else {
+    } else if (gameType === "come-come") {
       validMoves = getComeComeValidMoves(selectedPiece, pieces as ComeComePiece[], localPlayer.color)
+    } else if (gameType === "cat-and-mouse") {
+      validMoves = getCatAndMouseValidMoves(selectedPiece, pieces as CatAndMousePiece[], localPlayer.color)
     }
   }
 
@@ -77,7 +75,8 @@ export function Board() {
 
           const validMove = validMoves.find((m) => m.to.row === row && m.to.col === col)
           const isValidMove = !!validMove
-          const isCapture = !!validMove?.capturedPieces && validMove!.capturedPieces.length > 0
+          const isCapture =
+            gameType !== "cat-and-mouse" && !!validMove?.capturedPieces && validMove.capturedPieces.length > 0
           const isPromotion = !!validMove?.promotion
 
           return (
@@ -93,6 +92,7 @@ export function Board() {
               {piece && (
                 <Piece
                   piece={piece}
+                  gameType={gameType}
                   isSelected={isSelected}
                   onClick={() => handleSquareClick(position)}
                   isDisabled={!localPlayer || piece.color !== localPlayer.color || currentTurn !== localPlayer.color}

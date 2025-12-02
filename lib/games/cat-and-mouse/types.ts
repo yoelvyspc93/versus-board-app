@@ -1,15 +1,12 @@
-import type { Position, PlayerColor } from "@/lib/common/types"
+import type { BasePiece, BaseMove } from "@/lib/common/types"
 
 export type CatAndMousePieceType = "mouse" | "cat"
 
-export interface CatAndMousePiece {
-  id: string
+export interface CatAndMousePiece extends BasePiece {
   type: CatAndMousePieceType
-  color: PlayerColor
-  position: Position
 }
 
-export interface CatAndMouseMove {
-  from: Position
-  to: Position
+export interface CatAndMouseMove extends BaseMove {
+  capturedPieces?: never
+  promotion?: never
 }

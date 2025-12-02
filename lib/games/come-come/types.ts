@@ -1,25 +1,20 @@
-import type { Position, PlayerColor } from "@/lib/common/types"
+import type { BasePiece, BaseMove } from "@/lib/common/types"
 
-export type ComeComeePieceType = "normal" | "king"
+export type ComeComePieceType = "normal" | "king"
 
-export interface ComeComePiece {
-  id: string
-  color: PlayerColor
-  type: ComeComeePieceType
-  position: Position
+export interface ComeComePiece extends BasePiece {
+  type: ComeComePieceType
 }
 
-export interface ComeComeMove {
-  from: Position
-  to: Position
-  capturedPieces?: Position[]
+export interface ComeComeMove extends BaseMove {
+  capturedPieces?: { row: number; col: number }[]
   promotion?: boolean
 }
 
 export interface ComeComeGameData {
   pieces: ComeComePiece[]
-  selectedPiece: Position | null
-  validMoves: Position[]
+  selectedPiece: { row: number; col: number } | null
+  validMoves: { row: number; col: number }[]
   mustCapture: boolean
   continuousCapture: boolean
 }
