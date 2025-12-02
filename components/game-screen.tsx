@@ -4,10 +4,11 @@ import { useGameStore } from "@/lib/store"
 import { Board } from "./board"
 import { Button } from "@/components/ui/button"
 import { Card, CardTitle } from "@/components/ui/card"
-import { Crown, Trophy, Users, Sword, Cat, Mouse } from "lucide-react"
+import { Crown, Trophy, Users, Sword, Cat, Mouse, Wifi } from "lucide-react"
 
 export function GameScreen() {
-  const { player1, player2, currentTurn, localPlayer, winner, state, pieces, resetGame, gameType } = useGameStore()
+  const { player1, player2, currentTurn, localPlayer, winner, pieces, gameType, backToRoom, connectionStage } =
+    useGameStore()
 
   const currentPlayerName = currentTurn === player1?.color ? player1?.name : player2?.name
 
@@ -56,6 +57,11 @@ export function GameScreen() {
             <GameIcon className="w-6 h-6 text-primary" />
           </div>
           <h1 className="text-3xl font-bold tracking-tight">VersusBoard - {gameName}</h1>
+        </div>
+
+        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+          <Wifi className="w-4 h-4" />
+          <span>{connectionStage === "room-ready" ? "Sala conectada" : "Conectando sala..."}</span>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -148,8 +154,8 @@ export function GameScreen() {
                 <p className="text-2xl font-bold text-[#d87a2f]">¡Ganador: {winner.name}!</p>
               </div>
               <div className="flex gap-3 justify-center flex-wrap">
-                <Button onClick={resetGame} variant="outline" className="bg-white/90 hover:bg-white">
-                  Volver al inicio
+                <Button onClick={backToRoom} variant="outline" className="bg-white/90 hover:bg-white">
+                  Volver a la sala
                 </Button>
               </div>
             </div>
