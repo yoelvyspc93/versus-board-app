@@ -1,7 +1,8 @@
 "use client"
 
 import type React from "react"
-import type { Position } from "@/lib/types"
+import { memo } from "react"
+import type { Position } from "@/lib/common/types"
 import { Crown } from "lucide-react"
 
 interface SquareProps {
@@ -14,7 +15,7 @@ interface SquareProps {
   children?: React.ReactNode
 }
 
-export function Square({
+export const Square = memo(function Square({
   position,
   isLight,
   isValidMove,
@@ -39,13 +40,9 @@ export function Square({
         ${isValidMove || isCapture || hasPiece ? "cursor-pointer hover:brightness-105" : "cursor-default"}
       `}
     >
-      {isValidMove && !isCapture && (
-        <div className="absolute inset-0 bg-[#3c7ff7] opacity-40 animate-pulse" />
-      )}
+      {isValidMove && !isCapture && <div className="absolute inset-0 bg-[#3c7ff7] opacity-40 animate-pulse" />}
 
-      {isCapture && (
-        <div className="absolute inset-0 bg-[#4ccb34] opacity-50 animate-pulse" />
-      )}
+      {isCapture && <div className="absolute inset-0 bg-[#4ccb34] opacity-50 animate-pulse" />}
 
       {isPromotion && (
         <>
@@ -56,9 +53,7 @@ export function Square({
         </>
       )}
 
-      <div className="relative w-4/5 h-4/5 flex items-center justify-center">
-        {children}
-      </div>
+      <div className="relative w-4/5 h-4/5 flex items-center justify-center">{children}</div>
     </button>
   )
-}
+})
