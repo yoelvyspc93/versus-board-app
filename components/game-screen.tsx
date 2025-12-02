@@ -4,12 +4,11 @@ import { useGameStore } from "@/lib/store"
 import { Board } from "./board"
 import { Button } from "@/components/ui/button"
 import { Card, CardTitle } from "@/components/ui/card"
-import { Crown, Trophy, Users } from "lucide-react"
+import { Crown, Trophy, Users, Sword, Castle } from "lucide-react"
 
 export function GameScreen() {
-  const { player1, player2, currentTurn, localPlayer, winner, state, pieces, resetGame } = useGameStore()
+  const { player1, player2, currentTurn, localPlayer, winner, state, pieces, resetGame, gameType } = useGameStore()
 
-  const isMyTurn = true//localPlayer && currentTurn === localPlayer.color
   const currentPlayerName = currentTurn === player1?.color ? player1?.name : player2?.name
 
   const darkPieces = pieces.filter((p) => p.color === "dark").length
@@ -17,20 +16,25 @@ export function GameScreen() {
   const player1Pieces = player1?.color === "dark" ? darkPieces : lightPieces
   const player2Pieces = player2?.color === "dark" ? darkPieces : lightPieces
 
+  const gameIcon = gameType === "checkers" ? Crown : gameType === "come-come" ? Sword : Castle
+  const gameName = gameType === "checkers" ? "Damas" : gameType === "come-come" ? "Come-Come" : "Ajedrez"
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-2xl space-y-6">
         <div className="flex items-center justify-center gap-3">
           <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-            <Crown className="w-6 h-6 text-primary" />
+            {gameIcon && <gameIcon className="w-6 h-6 text-primary" />}
           </div>
-          <h1 className="text-3xl font-bold tracking-tight">VersusBoard</h1>
+          <h1 className="text-3xl font-bold tracking-tight">VersusBoard - {gameName}</h1>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <Card
             className={`p-4 transition-all bg-white/90 backdrop-blur-md shadow-xl border-none ${
-              player1?.color === currentTurn && !winner ? "border-2 border-primary shadow-[0_0_25px_rgba(255,211,140,0.6)]" : ""
+              player1?.color === currentTurn && !winner
+                ? "border-2 border-primary shadow-[0_0_25px_rgba(255,211,140,0.6)]"
+                : ""
             }`}
           >
             <div className="space-y-2">
@@ -51,9 +55,7 @@ export function GameScreen() {
                 </div>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">
-                  {player1?.color === "dark" ? "Oscuras" : "Claras"}
-                </span>
+                <span className="text-muted-foreground">{player1?.color === "dark" ? "Oscuras" : "Claras"}</span>
                 <span className="font-semibold flex items-center gap-1">
                   <Users className="w-3 h-3" />
                   {player1Pieces}
@@ -64,7 +66,9 @@ export function GameScreen() {
 
           <Card
             className={`p-4 transition-all bg-white/90 backdrop-blur-md shadow-xl border-none ${
-              player2?.color === currentTurn && !winner ? "ring-2 ring-[#ffd38c] shadow-[0_0_25px_rgba(255,211,140,0.6)]" : ""
+              player2?.color === currentTurn && !winner
+                ? "ring-2 ring-[#ffd38c] shadow-[0_0_25px_rgba(255,211,140,0.6)]"
+                : ""
             }`}
           >
             <div className="space-y-2">
@@ -85,9 +89,7 @@ export function GameScreen() {
                 </div>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">
-                  {player2?.color === "dark" ? "Oscuras" : "Claras"}
-                </span>
+                <span className="text-muted-foreground">{player2?.color === "dark" ? "Oscuras" : "Claras"}</span>
                 <span className="font-semibold flex items-center gap-1">
                   <Users className="w-3 h-3" />
                   {player2Pieces}
@@ -125,16 +127,27 @@ export function GameScreen() {
         <Board />
 
         <Card className="p-4 bg-white/85 backdrop-blur-md border-none shadow-lg">
-          <CardTitle>Cómo jugar:</CardTitle>
+          <CardTitle>Cómo jugar {gameName}:</CardTitle>
           <div className="text-sm text-muted-foreground">
-            <ul className="list-disc list-inside space-y-1 ml-4">
-              <li>Haz clic en una pieza para seleccionarla.</li>
-              <li>Los cuadros azules indican movimientos válidos.</li>
-              <li>Los cuadros verdes indican capturas disponibles.</li>
-              <li>Las capturas son obligatorias cuando existen.</li>
-              <li>Si capturas, puedes seguir capturando en el mismo turno.</li>
-              <li>Llega al otro lado del tablero para coronar tu pieza.</li>
-            </ul>
+            {gameType === "checkers" ? (
+              <ul className="list-disc list-inside space-y-1 ml-4">
+                <li>Haz clic en una pieza para seleccionarla.</li>
+                <li>Los cuadros azules indican movimientos válidos.</li>
+                <li>Los cuadros verdes indican capturas disponibles.</li>
+                <li>Las capturas son obligatorias cuando existen.</li>
+                <li>Si capturas, puedes seguir capturando en el mismo turno.</li>
+                <li>Llega al otro lado del tablero para coronar tu pieza.</li>
+              </ul>
+            ) : (
+              <ul className="list-disc list-inside space-y-1 ml-4">
+                <li>Las piezas normales solo avanzan y capturan hacia adelante.</li>
+                <li>Las piezas normales NO pueden retroceder.</li>
+                <li>Las damas se mueven en diagonal múltiples casillas.</li>
+                <li>Las capturas son obligatorias cuando existen.</li>
+                <li>Puedes hacer capturas múltiples en el mismo turno.</li>
+                <li>Corona tu pieza al llegar al extremo opuesto.</li>
+              </ul>
+            )}
           </div>
         </Card>
       </div>

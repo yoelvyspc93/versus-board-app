@@ -5,17 +5,20 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { useGameStore } from "@/lib/store"
-import { Crown, Castle } from "lucide-react"
+import { Crown, Castle, Sword } from "lucide-react"
+import type { GameType } from "@/lib/common/types"
 
 export function LobbyScreen() {
   const [playerName, setPlayerName] = useState("")
   const [isJoining, setIsJoining] = useState(false)
+  const [selectedGame, setSelectedGame] = useState<GameType>("checkers")
 
-  const { state, createGame, joinGame } = useGameStore()
+  const { state, createGame, joinGame, setGameType } = useGameStore()
 
   const handleCreateGame = async () => {
     if (!playerName.trim()) return
     useGameStore.getState().setPlayerName(playerName)
+    setGameType(selectedGame)
     await createGame()
   }
 
@@ -35,9 +38,7 @@ export function LobbyScreen() {
   const isWaitingForPlayer = state === "waiting-player"
 
   const canCreate = state === "no-game" && !!playerName.trim()
-  const canJoin =
-    !!playerName.trim() &&
-    !isJoining
+  const canJoin = !!playerName.trim() && !isJoining
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-background via-muted/30 to-background">
@@ -68,17 +69,43 @@ export function LobbyScreen() {
         {/* Game Selection */}
         <div className="space-y-3">
           <label className="text-sm font-medium text-foreground">Selecciona el juego</label>
-          <div className="grid grid-cols-2 gap-3">
-            <Card className="p-4 border-2 border-primary bg-primary/5 cursor-pointer hover:bg-primary/10 transition-colors">
+          <div className="grid grid-cols-3 gap-3">
+            {/* Checkers */}
+            <Card
+              onClick={() => setSelectedGame("checkers")}
+              className={`p-4 border-2 cursor-pointer hover:bg-primary/10 transition-colors ${
+                selectedGame === "checkers" ? "border-primary bg-primary/5" : "border-border"
+              }`}
+            >
               <div className="text-center space-y-1">
-                <Crown className="w-8 h-8 mx-auto text-primary" />
+                <Crown
+                  className={`w-8 h-8 mx-auto ${selectedGame === "checkers" ? "text-primary" : "text-muted-foreground"}`}
+                />
                 <p className="font-semibold text-sm">Damas</p>
-                <p className="text-xs text-primary">Seleccionado</p>
+                {selectedGame === "checkers" && <p className="text-xs text-primary">Seleccionado</p>}
               </div>
             </Card>
+
+            {/* Come-Come */}
+            <Card
+              onClick={() => setSelectedGame("come-come")}
+              className={`p-4 border-2 cursor-pointer hover:bg-primary/10 transition-colors ${
+                selectedGame === "come-come" ? "border-primary bg-primary/5" : "border-border"
+              }`}
+            >
+              <div className="text-center space-y-1">
+                <Sword
+                  className={`w-8 h-8 mx-auto ${selectedGame === "come-come" ? "text-primary" : "text-muted-foreground"}`}
+                />
+                <p className="font-semibold text-sm">Come-Come</p>
+                {selectedGame === "come-come" && <p className="text-xs text-primary">Seleccionado</p>}
+              </div>
+            </Card>
+
+            {/* Chess - Coming Soon */}
             <Card className="p-4 border opacity-50 cursor-not-allowed">
               <div className="text-center space-y-1">
-                <Castle className="w-8 h-8 mx-auto text-primary" />
+                <Castle className="w-8 h-8 mx-auto text-muted-foreground" />
                 <p className="font-semibold text-sm">Ajedrez</p>
                 <p className="text-xs text-muted-foreground">Próximamente</p>
               </div>
