@@ -45,7 +45,7 @@ export function LobbyScreen() {
 
 	if (view === 'welcome') {
 		return (
-			<div className="min-h-screen relative flex flex-col items-center justify-center p-4 text-white bg-[url('/lobby-screen-mobile.png')] md:bg-[url('/lobby-screen-desktop.png')] bg-cover bg-center bg-no-repeat">
+			<div className="min-h-screen relative flex flex-col items-center justify-center p-4 text-white lobby-background">
 				<div className="absolute inset-0 bg-black/40" />
 				<div className="relative z-10 max-w-md w-full text-center space-y-8 animate-in fade-in zoom-in duration-500">
 					<div className="flex justify-center">

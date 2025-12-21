@@ -43,8 +43,21 @@ export default function RootLayout({
 }: Readonly<{
 	children: React.ReactNode
 }>) {
+	const basePathRaw = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+	const normalized = basePathRaw.replace(/^\/+|\/+$/g, '')
+	const assetPrefix = normalized ? `/${normalized}/` : '/'
+
 	return (
-		<html lang="es">
+		<html
+			lang="es"
+			style={{
+				['--asset-prefix' as any]: assetPrefix,
+				['--bg-lobby-mobile' as any]: `url('${assetPrefix}lobby-screen-mobile.png')`,
+				['--bg-lobby-desktop' as any]: `url('${assetPrefix}lobby-screen-desktop.png')`,
+				['--bg-texture-mobile' as any]: `url('${assetPrefix}texture-mobile.png')`,
+				['--bg-texture-desktop' as any]: `url('${assetPrefix}texture-desktop.png')`,
+			}}
+		>
 			<body className={`font-sans antialiased`}>
 				{children}
 				<Analytics />
