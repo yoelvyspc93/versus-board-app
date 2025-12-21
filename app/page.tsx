@@ -23,8 +23,9 @@ export default function Home() {
 
   // Fallback / Loading
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-slate-900 text-white">
-      <div className="text-center space-y-4">
+    <div className="min-h-screen relative flex items-center justify-center p-4 texture-background text-white">
+      <div className="absolute inset-0 bg-black/40" />
+      <div className="relative z-10 text-center space-y-4">
         <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
         <h2 className="text-2xl font-bold">Cargando VersusBoard...</h2>
       </div>

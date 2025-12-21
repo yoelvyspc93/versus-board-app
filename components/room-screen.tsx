@@ -1,39 +1,51 @@
 'use client'
 
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { useGameStore } from '@/lib/store'
 import { Crown, Castle, Sword, Cat, LogOut, Wifi } from 'lucide-react'
-import type { GameType } from '@/lib/common/types'
+import type { GameType, PlayerColor } from '@/lib/common/types'
 
 export function RoomScreen() {
 	const {
 		currentRoomName,
 		player1,
 		player2,
-		isHost,
 		startGame,
 		resetGame, // This disconnects and goes back to lobby
 		connectionStatus,
 	} = useGameStore()
 
-	const handleStartGame = (type: GameType) => {
-		startGame(type)
+	const [pendingGameType, setPendingGameType] = useState<GameType | null>(null)
+
+	const handleSelectGame = (type: GameType) => {
+		setPendingGameType(type)
+	}
+
+	const handleConfirmStart = (starterColor: PlayerColor) => {
+		if (!pendingGameType) return
+		startGame(pendingGameType, { starterColor })
+		setPendingGameType(null)
 	}
 
 	const isConnected = connectionStatus === 'connected'
+	const isCatAndMouse = pendingGameType === 'cat-and-mouse'
 
 	return (
-		<div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-background via-muted/30 to-background">
-			<div className="w-full max-w-2xl space-y-6">
+		<div className="min-h-screen relative flex flex-col items-center justify-center p-4 texture-background text-white">
+			<div className="absolute inset-0 bg-black/40" />
+			<div className="relative z-10 w-full max-w-2xl space-y-6">
 				{/* Header / Room Info */}
-				<div className="flex items-center justify-between bg-card border p-4 rounded-lg shadow-sm">
+				<div className="flex items-center justify-between bg-black/35 border border-white/10 p-4 rounded-lg shadow-sm backdrop-blur-md">
 					<div>
 						<h2 className="text-lg font-bold flex items-center gap-2">
 							Sala: {currentRoomName}
 						</h2>
-						<p className="text-sm text-muted-foreground">
-							{isHost ? 'Eres el Anfitrión' : 'Eres Invitado'}
+						<p className="text-sm text-white/80">
+							{player2
+								? 'Ambos jugadores pueden elegir el juego'
+								: 'Esperando al segundo jugador'}
 						</p>
 					</div>
 					<Button variant="destructive" size="sm" onClick={resetGame}>
@@ -45,7 +57,7 @@ export function RoomScreen() {
 				{/* Players Status */}
 				<div className="grid grid-cols-2 gap-4">
 					{/* Player 1 (Host) */}
-					<Card className="p-4 flex flex-col items-center justify-center space-y-2 relative overflow-hidden">
+					<Card className="p-4 flex flex-col items-center justify-center space-y-2 relative overflow-hidden bg-black/35 border border-white/10 backdrop-blur-md">
 						<div className="absolute top-2 right-2 flex items-center gap-1">
 							{/* Green Light Indicator */}
 							<div
@@ -61,12 +73,12 @@ export function RoomScreen() {
 						</div>
 						<div className="text-center">
 							<p className="font-bold">{player1?.name || 'Esperando...'}</p>
-							<p className="text-xs text-muted-foreground">Anfitrión</p>
+							<p className="text-xs text-white/80">Anfitrión</p>
 						</div>
 					</Card>
 
 					{/* Player 2 (Guest) */}
-					<Card className="p-4 flex flex-col items-center justify-center space-y-2 relative overflow-hidden">
+					<Card className="p-4 flex flex-col items-center justify-center space-y-2 relative overflow-hidden bg-black/35 border border-white/10 backdrop-blur-md">
 						<div className="absolute top-2 right-2 flex items-center gap-1">
 							{/* Green Light Indicator */}
 							<div
@@ -88,71 +100,93 @@ export function RoomScreen() {
 							<p className="font-bold">
 								{player2?.name || 'Esperando oponente...'}
 							</p>
-							<p className="text-xs text-muted-foreground">Invitado</p>
+							<p className="text-xs text-white/80">Invitado</p>
 						</div>
 					</Card>
 				</div>
 
-				{/* Game Selection (Host Only) */}
-				{isHost && player2 ? (
+				{/* Game Selection (Both Players) */}
+				{player2 ? (
 					<div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
 						<div className="flex items-center justify-center gap-2 mb-4">
 							<Wifi className="w-5 h-5 text-green-600" />
-							<span className="text-sm font-medium text-green-700 dark:text-green-400">
+							<span className="text-sm font-medium text-green-300">
 								Conectados y listos para jugar
 							</span>
 						</div>
 						<h3 className="text-lg font-semibold text-center">
-							Selecciona un juego para comenzar
+							Selecciona un juego para comenzar (el primero que confirme inicia)
 						</h3>
 						<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 							<GameCard
 								icon={<Crown className="w-8 h-8 text-primary" />}
 								title="Damas"
-								onClick={() => handleStartGame('checkers')}
+								onClick={() => handleSelectGame('checkers')}
 							/>
 							<GameCard
 								icon={<Sword className="w-8 h-8 text-orange-500" />}
 								title="Come-Come"
-								onClick={() => handleStartGame('come-come')}
+								onClick={() => handleSelectGame('come-come')}
 							/>
 							<GameCard
 								icon={<Cat className="w-8 h-8 text-blue-500" />}
 								title="Gato y Ratón"
-								onClick={() => handleStartGame('cat-and-mouse')}
+								onClick={() => handleSelectGame('cat-and-mouse')}
 							/>
 						</div>
-						{/* Chess - Disabled */}
-						<Card className="p-4 border opacity-50 cursor-not-allowed bg-muted/30">
-							<div className="flex items-center gap-4">
-								<div className="p-2 bg-background rounded-full">
-									<Castle className="w-6 h-6 text-muted-foreground" />
+
+						{pendingGameType && (
+							<Card className="p-4 border border-white/10 bg-black/35 backdrop-blur-md space-y-3">
+								<div className="space-y-1">
+									<p className="font-semibold text-center">
+										{isCatAndMouse ? 'Elige tu rol' : 'Elige tu color'}
+									</p>
+									<p className="text-sm text-white/80 text-center">
+										{isCatAndMouse
+											? 'Tú eliges ser el Ratón o el Gato; el otro jugador será el contrario.'
+											: 'Tú eliges Blancas o Negras; el otro jugador será el contrario.'}
+									</p>
 								</div>
-								<div>
-									<p className="font-semibold">Ajedrez</p>
-									<p className="text-xs text-muted-foreground">Próximamente</p>
+
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+									<Button
+										variant="default"
+										className="h-12"
+										onClick={() => handleConfirmStart('dark')}
+									>
+										{isCatAndMouse ? 'Yo soy el Ratón' : 'Yo juego con Negras'}
+									</Button>
+									<Button
+										variant="secondary"
+										className="h-12"
+										onClick={() => handleConfirmStart('light')}
+									>
+										{isCatAndMouse ? 'Yo soy el Gato' : 'Yo juego con Blancas'}
+									</Button>
 								</div>
-							</div>
-						</Card>
+
+								<div className="flex justify-center">
+									<Button
+										variant="ghost"
+										size="sm"
+										onClick={() => setPendingGameType(null)}
+										className="text-white/80 hover:text-white"
+									>
+										Cancelar
+									</Button>
+								</div>
+							</Card>
+						)}
 					</div>
 				) : (
 					<div className="text-center py-8 space-y-4">
-						{!player2 ? (
-							<div className="flex flex-col items-center gap-2">
-								<div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-								<p className="text-muted-foreground">
-									Esperando a que alguien se una a la sala{' '}
-									<strong>"{currentRoomName}"</strong>...
-								</p>
-							</div>
-						) : (
-							<div className="flex flex-col items-center gap-2">
-								<div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-								<p className="text-muted-foreground">
-									Esperando a que el anfitrión seleccione el juego...
-								</p>
-							</div>
-						)}
+						<div className="flex flex-col items-center gap-2">
+							<div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+							<p className="text-white/80">
+								Esperando a que alguien se una a la sala{' '}
+								<strong>"{currentRoomName}"</strong>...
+							</p>
+						</div>
 					</div>
 				)}
 			</div>
@@ -172,9 +206,11 @@ function GameCard({
 	return (
 		<Card
 			onClick={onClick}
-			className="p-4 cursor-pointer hover:bg-accent hover:shadow-md transition-all flex flex-col items-center gap-3 border-2 border-transparent hover:border-primary/20"
+			className="p-4 cursor-pointer hover:bg-white/10 hover:shadow-md transition-all flex flex-col items-center gap-3 border border-white/10 bg-black/25 backdrop-blur-md"
 		>
-			<div className="p-3 rounded-full bg-background shadow-sm">{icon}</div>
+			<div className="p-3 rounded-full bg-black/25 border border-white/10 shadow-sm">
+				{icon}
+			</div>
 			<span className="font-bold">{title}</span>
 		</Card>
 	)
