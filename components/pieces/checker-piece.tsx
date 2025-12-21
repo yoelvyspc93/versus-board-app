@@ -13,7 +13,8 @@ interface CheckerPieceProps {
 }
 
 export function CheckerPiece({ color, isKing, isSelected, isDisabled, onClick }: CheckerPieceProps) {
-  const isLight = color === "light"
+  // Theme: match reference image (red vs black)
+  const isRed = color === "light"
 
   return (
     <motion.div
@@ -25,10 +26,10 @@ export function CheckerPiece({ color, isKing, isSelected, isDisabled, onClick }:
         ${isSelected ? "scale-110 shadow-xl" : "shadow-lg"}
       `}
       style={{
-        background: isLight
-          ? "radial-gradient(circle at 30% 30%, #f9e7c3, #e8d4a8)"
-          : "radial-gradient(circle at 30% 30%, #a24826, #8b3b20)",
-        border: `3px solid ${isLight ? "#d4c3a0" : "#6b2f1a"}`,
+        background: isRed
+          ? "radial-gradient(circle at 30% 25%, #ff5a4f 0%, #d12b25 40%, #8f1a18 100%)"
+          : "radial-gradient(circle at 30% 25%, #4a4a4a 0%, #171717 45%, #050505 100%)",
+        border: `3px solid ${isRed ? "#6f1414" : "#111111"}`,
         boxShadow: isSelected
           ? "0 8px 20px rgba(0,0,0,0.45), 0 0 18px rgba(255,200,150,0.6), inset 0 2px 4px rgba(255,255,255,0.3)"
           : "0 4px 14px rgba(0,0,0,0.35), inset 0 2px 4px rgba(255,255,255,0.2)",
@@ -40,7 +41,7 @@ export function CheckerPiece({ color, isKing, isSelected, isDisabled, onClick }:
       <div
         className="absolute inset-0 rounded-full opacity-30"
         style={{
-          background: `conic-gradient(from 0deg, transparent 0deg, #ffffff 90deg, transparent 180deg)`,
+          background: "radial-gradient(circle at 30% 25%, rgba(255,255,255,0.55), transparent 55%)",
         }}
       />
 
@@ -52,7 +53,7 @@ export function CheckerPiece({ color, isKing, isSelected, isDisabled, onClick }:
           transition={{ type: "spring", stiffness: 500, damping: 15 }}
         >
           <Crown
-            className={`w-1/2 h-1/2 ${isLight ? "text-[#8b7355]" : "text-[#f9e7c3]"}`}
+            className={`w-1/2 h-1/2 ${isRed ? "text-[#ffe3c9]" : "text-[#ffd38c]"}`}
             strokeWidth={2.5}
             fill="currentColor"
           />

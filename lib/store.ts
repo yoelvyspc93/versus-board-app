@@ -39,11 +39,14 @@ interface GameStore {
   fetchRooms: () => Promise<void> // New action
   createRoom: (roomName: string) => Promise<void>
   joinRoom: (roomName: string) => Promise<void>
-  startGame: (gameType: GameType) => void
+  startGame: (
+    gameType: GameType,
+    options?: { startedBy?: "local" | "remote"; starterColor?: PlayerColor }
+  ) => void
   selectPiece: (position: Position | null) => void
   movePiece: (move: BaseMove) => void
   handleRemoteMove: (move: BaseMove) => void
-  returnToRoom: () => void
+  returnToRoom: (options?: { notifyRemote?: boolean }) => void
   resetGame: () => void // Fully disconnect
 }
 
@@ -121,13 +124,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
             hostName: localPlayer.name
           })
 
-        } else if (data.type === "start_game") {
-          // Handled in guest logic, but host initiates usually. 
-          // If we implement "Guest can pick game", this would be needed.
+        } else if (data.type === "request_start_game") {
+          // Guest selected a game; first selection wins.
+          get().startGame(data.gameType, { startedBy: "remote", starterColor: data.starterColor })
         } else if (data.type === "move") {
           get().handleRemoteMove(data.move)
         } else if (data.type === "return_room") {
-          get().returnToRoom()
+          get().returnToRoom({ notifyRemote: false })
         }
       })
 
@@ -179,12 +182,12 @@ export const useGameStore = create<GameStore>((set, get) => ({
             isHost: false
           })
         } else if (data.type === "start_game") {
-          const { gameType, yourColor, pieces, opponentName } = data
+          const { gameType, yourColor, pieces, opponentName, currentTurn } = data
           set({
             state: "in-progress",
             gameType,
             pieces,
-            currentTurn: "dark",
+            currentTurn: currentTurn ?? "dark",
             player1: { id: "remote", name: opponentName, color: yourColor === "dark" ? "light" : "dark" },
             player2: { ...get().localPlayer!, color: yourColor },
             localPlayer: { ...get().localPlayer!, color: yourColor }
@@ -192,7 +195,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
         } else if (data.type === "move") {
           get().handleRemoteMove(data.move)
         } else if (data.type === "return_room") {
-          get().returnToRoom()
+          get().returnToRoom({ notifyRemote: false })
         }
       })
 
@@ -211,22 +214,34 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
   },
 
-  startGame: (gameType: GameType) => {
-    const { connection, player1, player2, isHost } = get()
-    if (!connection || !isHost || !player2) return
+  startGame: (gameType: GameType, options) => {
+    const { connection, player1, player2, isHost, state } = get()
+    if (!connection || !player2) return
+
+    // Only start from the room; once started, ignore further selections/requests.
+    if (state !== "room") return
+
+    if (!isHost) {
+      connection.send({ type: "request_start_game", gameType, starterColor: options?.starterColor ?? "dark" })
+      return
+    }
+
+    const startedBy = options?.startedBy ?? "local"
+    const starterColor: PlayerColor = options?.starterColor ?? "dark"
 
     // Logic to randomize colors or keep fixed
     let player1Color: PlayerColor
     let player2Color: PlayerColor
 
-    if (gameType === "cat-and-mouse") {
-      const isPlayer1Mouse = Math.random() > 0.5
-      player1Color = isPlayer1Mouse ? "dark" : "light"
-      player2Color = isPlayer1Mouse ? "light" : "dark"
+    // Selector chooses their side/role, the other player gets the opposite.
+    // If host started: host is player1.
+    // If guest started: guest is player2.
+    if (startedBy === "local") {
+      player1Color = starterColor
+      player2Color = starterColor === "dark" ? "light" : "dark"
     } else {
-      const randomColor = Math.random() > 0.5 ? "dark" : "light"
-      player1Color = randomColor
-      player2Color = player1Color === "dark" ? "light" : "dark"
+      player2Color = starterColor
+      player1Color = starterColor === "dark" ? "light" : "dark"
     }
 
     const engine = GameEngine.get(gameType)
@@ -237,7 +252,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       state: "in-progress",
       gameType,
       pieces: newPieces,
-      currentTurn: "dark",
+      currentTurn: starterColor,
       player1: { ...player1!, color: player1Color },
       player2: { ...player2!, color: player2Color },
       localPlayer: { ...get().localPlayer!, color: player1Color }
@@ -249,7 +264,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       gameType,
       yourColor: player2Color,
       pieces: newPieces,
-      opponentName: player1!.name
+      opponentName: player1!.name,
+      currentTurn: starterColor
     })
   },
 
@@ -360,15 +376,13 @@ export const useGameStore = create<GameStore>((set, get) => ({
     }
   },
 
-  returnToRoom: () => {
+  returnToRoom: (options) => {
     const { connection } = get()
+    const notifyRemote = options?.notifyRemote ?? true
 
-    // If host triggers this, send message to guest
-    // If guest receives this, just update state
-    // We'll assume both call this locally, but usually one button triggers it for both.
-    // For simplicity: whoever clicks "Back to Room" sends a signal.
-
-    if (connection) {
+    // Avoid ping-pong: when we receive "return_room" from the remote peer,
+    // we should NOT broadcast it back.
+    if (notifyRemote && connection) {
       connection.send({ type: "return_room" })
     }
 
@@ -376,8 +390,11 @@ export const useGameStore = create<GameStore>((set, get) => ({
       state: "room",
       winner: null,
       pieces: [],
+      selectedPiece: null,
       validMoves: [],
-      selectedPiece: null
+      currentTurn: "dark",
+      mustCapture: false,
+      continuousCapture: false,
     })
   },
 

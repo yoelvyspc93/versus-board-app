@@ -7,17 +7,17 @@
   --background: #faf8f5;
   --foreground: #2d2520;
   --card: #ffffff;
-  --card-foreground: #2d2520;
+  --card-foreground: #dbb7a0;
   --popover: #ffffff;
   --popover-foreground: #2d2520;
   --primary: #8b3b20;
   --primary-foreground: #ffffff;
   --secondary: #f5f1e8;
-  --secondary-foreground: #2d2520;
+  --secondary-foreground: #dbb7a0;
   --muted: #f5f1e8;
   --muted-foreground: #6b5d56;
   --accent: #c79a6b;
-  --accent-foreground: #2d2520;
+  --accent-foreground: #dbb7a0;
   --destructive: oklch(0.577 0.245 27.325);
   --destructive-foreground: oklch(0.577 0.245 27.325);
   --border: #e5ddd4;
@@ -75,6 +75,20 @@
   --sidebar-ring: oklch(0.439 0 0);
 }
 
+/* --color-brandy-50: oklch(95.74% 0.014 39.42);
+--color-brandy-100: oklch(91.58% 0.030 38.56);
+--color-brandy-200: oklch(83.37% 0.060 39.24);
+--color-brandy-300: oklch(75.25% 0.095 38.96);
+--color-brandy-400: oklch(67.60% 0.128 39.09);
+--color-brandy-500: oklch(60.63% 0.163 38.20);
+--color-brandy-600: oklch(51.59% 0.135 38.43);
+--color-brandy-700: oklch(42.15% 0.108 38.34);
+--color-brandy-800: oklch(32.17% 0.077 38.76);
+--color-brandy-900: oklch(21.36% 0.044 38.46);
+--color-brandy-950: oklch(17.86% 0.032 38.13); */
+
+
+
 @theme inline {
   --font-sans: "Geist", "Geist Fallback";
   --font-mono: "Geist Mono", "Geist Mono Fallback";
@@ -124,5 +138,20 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .texture-background {
+    background-image: url("/texture-mobile.png");
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+  }
+
+  @media (min-width: 768px) {
+    .texture-background {
+      background-image: url("/texture-desktop.png");
+    }
   }
 }
