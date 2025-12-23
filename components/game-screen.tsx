@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { useGameStore } from '@/lib/store'
 import { Board } from './board'
 import { Button } from '@/components/ui/button'
-import { Card, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardTitle } from '@/components/ui/card'
 import { Crown, Sword, Cat, Mouse } from 'lucide-react'
 import { GameAvatar } from './ui/game-avatar'
 import { uiText } from '@/lib/texts'
@@ -14,6 +14,8 @@ import { AppBackground } from '@/components/ui/app-background'
 import appIcon from '@/public/icon.webp'
 import Image from 'next/image'
 import { Modal } from '@/components/ui/modal'
+
+type ConfirmActionKind = 'surrender' | 'goToLobby'
 
 export function GameScreen() {
 	const {
@@ -29,6 +31,10 @@ export function GameScreen() {
 	} = useGameStore()
 
 	const [isInstructionsOpen, setIsInstructionsOpen] = useState(false)
+	const [confirmAction, setConfirmAction] = useState<{
+		open: boolean
+		kind: ConfirmActionKind | null
+	}>({ open: false, kind: null })
 
 	const getGameInfo = () => {
 		switch (gameType) {
@@ -54,6 +60,22 @@ export function GameScreen() {
 
 	const Player1RoleIcon = getPlayerIcon(player1?.color)
 	const Player2RoleIcon = getPlayerIcon(player2?.color)
+
+	const confirmCopy =
+		confirmAction.kind === 'surrender'
+			? uiText.confirmations.surrender
+			: uiText.confirmations.goToLobby
+
+	const colorLabel = (c: 'dark' | 'light' | undefined) =>
+		c === 'dark' ? uiText.actions.pickDark : uiText.actions.pickLight
+
+	const onConfirm = () => {
+		const kind = confirmAction.kind
+		setConfirmAction({ open: false, kind: null })
+
+		if (kind === 'surrender') surrender()
+		if (kind === 'goToLobby') returnToRoom()
+	}
 
 	return (
 		<div className="min-h-screen relative flex flex-col items-center justify-center p-4 text-white">
@@ -131,6 +153,21 @@ export function GameScreen() {
 					/>
 				)}
 
+				{!winner && localPlayer ? (
+					<div className="text-center text-sm text-white/80">
+						<span className="font-semibold">Tu color:</span>{' '}
+						{colorLabel(localPlayer.color)}{' '}
+						<span className="mx-2 opacity-60">|</span>
+						<span className="font-semibold">Turno:</span>{' '}
+						{colorLabel(currentTurn)}{' '}
+						{currentTurn !== localPlayer.color ? (
+							<span className="ml-2 text-xs opacity-80">
+								(esperando al rival)
+							</span>
+						) : null}
+					</div>
+				) : null}
+
 				<Board />
 
 				<Modal
@@ -171,9 +208,47 @@ export function GameScreen() {
 								className="shadow-md"
 								onClick={() => setIsInstructionsOpen(false)}
 							>
-								Cerrar
+								{uiText.actions.close}
 							</Button>
 						</div>
+					</Card>
+				</Modal>
+
+				<Modal
+					open={confirmAction.open}
+					onOpenChange={(open) =>
+						setConfirmAction((prev) => ({ ...prev, open }))
+					}
+					ariaLabel={confirmCopy.title}
+					contentClassName="max-w-md"
+				>
+					<Card className="p-4 bg-black/35 backdrop-blur-md border border-white/10 shadow-lg">
+						<CardTitle>{confirmCopy.title}</CardTitle>
+						<CardContent className="px-0">
+							<div className="mt-2 text-sm text-white/80">
+								{confirmCopy.description}
+							</div>
+							<div className="mt-4 flex justify-end gap-2">
+								<Button
+									variant="secondary"
+									className="shadow-md"
+									onClick={() => setConfirmAction({ open: false, kind: null })}
+								>
+									{uiText.confirmations.no}
+								</Button>
+								<Button
+									variant={
+										confirmAction.kind === 'surrender'
+											? 'destructive'
+											: 'default'
+									}
+									className="shadow-md"
+									onClick={onConfirm}
+								>
+									{uiText.confirmations.yes}
+								</Button>
+							</div>
+						</CardContent>
 					</Card>
 				</Modal>
 
@@ -184,17 +259,21 @@ export function GameScreen() {
 							variant="secondary"
 							className="shadow-md"
 						>
-							Instrucciones
+							{uiText.actions.instructions}
 						</Button>
 						<Button
-							onClick={() => surrender()}
+							onClick={() =>
+								setConfirmAction({ open: true, kind: 'surrender' })
+							}
 							variant="destructive"
 							className="shadow-md"
 						>
-							Rendirse
+							{uiText.actions.surrender}
 						</Button>
 						<Button
-							onClick={() => returnToRoom()}
+							onClick={() =>
+								setConfirmAction({ open: true, kind: 'goToLobby' })
+							}
 							variant="default"
 							className="shadow-md"
 						>

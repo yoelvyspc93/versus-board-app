@@ -14,7 +14,6 @@ export function Board() {
 		currentTurn,
 		localPlayer,
 		movePiece,
-		player1,
 		gameType,
 		validMoves,
 	} = useGameStore()
@@ -26,8 +25,18 @@ export function Board() {
 			// Flip the board for the cat so their pieces appear at the bottom.
 			isFlippedForLocal = localPlayer.color === 'light'
 		} else {
-			// For checkers-based games, player 1 starts on top rows.
-			isFlippedForLocal = !!player1 && localPlayer.id === player1.id
+			// For checkers-based games, make the orientation robust by looking at where
+			// the local player's pieces actually are on the board.
+			// If they are mostly on the "top" half, we flip so they appear at the bottom.
+			const myPieces = pieces.filter((p) => p.color === localPlayer.color)
+			if (myPieces.length > 0) {
+				const avgRow =
+					myPieces.reduce((sum, p) => sum + p.position.row, 0) / myPieces.length
+				isFlippedForLocal = avgRow < 3.5
+			} else {
+				// Fallback: flip dark so it still feels natural.
+				isFlippedForLocal = localPlayer.color === 'dark'
+			}
 		}
 	}
 

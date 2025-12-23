@@ -261,8 +261,13 @@ export function applyMove(move: ComeComeMove, pieces: ComeComePiece[]): ComeCome
 // Initialize Come-Come pieces (same as checkers - 12 pieces per player)
 export function initializeComeComePieces(player1Color: PlayerColor): ComeComePiece[] {
   const pieces: ComeComePiece[] = []
-  const darkStartRows = player1Color === "dark" ? [0, 1, 2] : [5, 6, 7]
-  const lightStartRows = player1Color === "dark" ? [5, 6, 7] : [0, 1, 2]
+  // IMPORTANT:
+  // Movement and promotion rules depend on piece color (same convention as checkers):
+  // - "dark" moves towards increasing rows and promotes on row 7
+  // - "light" moves towards decreasing rows and promotes on row 0
+  // So the initial layout must be fixed per color and NOT swapped by player selection.
+  const darkStartRows = [0, 1, 2]
+  const lightStartRows = [5, 6, 7]
 
   let id = 0
 

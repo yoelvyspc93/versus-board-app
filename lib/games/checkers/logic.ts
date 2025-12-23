@@ -256,8 +256,16 @@ export function applyMove(move: CheckersMove, pieces: CheckersPiece[]): Checkers
 // Initialize checkers pieces
 export function initializeCheckersPieces(player1Color: PlayerColor): CheckersPiece[] {
   const pieces: CheckersPiece[] = []
-  const darkStartRows = player1Color === "dark" ? [0, 1, 2] : [5, 6, 7]
-  const lightStartRows = player1Color === "dark" ? [5, 6, 7] : [0, 1, 2]
+  // IMPORTANT:
+  // Movement and promotion rules in this game are tied to the piece color:
+  // - "dark" moves towards increasing rows and promotes on row 7
+  // - "light" moves towards decreasing rows and promotes on row 0
+  // Therefore the initial layout must be fixed per color (not swapped by player selection),
+  // otherwise one side can start with no legal moves.
+  //
+  // Dark always starts on the top rows, Light always starts on the bottom rows.
+  const darkStartRows = [0, 1, 2]
+  const lightStartRows = [5, 6, 7]
 
   let id = 0
 

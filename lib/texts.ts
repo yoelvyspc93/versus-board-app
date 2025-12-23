@@ -13,12 +13,27 @@ export const uiText = {
     creatingRoom: "Creando...",
     connectingRoom: "Conectando...",
     goToLobby: "Volver al lobby",
+    instructions: "Instrucciones",
+    surrender: "Rendirse",
     cancel: "Cancelar",
+    close: "Cerrar",
     leaveRoom: "Salir",
     pickDark: "Yo juego con Negras",
     pickLight: "Yo juego con Blancas",
     pickMouse: "Yo soy el Ratón",
     pickCat: "Yo soy el Gato",
+  },
+  confirmations: {
+    yes: "Sí",
+    no: "No",
+    surrender: {
+      title: "¿Rendirse?",
+      description: "Perderás la partida actual y volverás al lobby.",
+    },
+    goToLobby: {
+      title: "¿Volver al lobby?",
+      description: "Salir de la partida actual te llevará de vuelta a la sala.",
+    },
   },
   welcome: {
     title: "VersusBoard",

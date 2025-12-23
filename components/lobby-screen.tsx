@@ -96,11 +96,25 @@ export function LobbyScreen() {
 			<AppBackground variant="texture" />
 			<div className="absolute inset-0 bg-black/30" aria-hidden />
 			<div className="relative z-10 w-full max-w-md space-y-6 animate-in slide-in-from-right duration-300">
-				<div className="text-center space-y-2">
+				{/* <div className="text-center space-y-2">
 					<h2 className="text-3xl font-bold tracking-tight">
 						{uiText.welcome.lobbyTitle}
 					</h2>
 					<p className="text-white/80">{uiText.welcome.lobbySubtitle}</p>
+				</div> */}
+				<div className="flex items-center gap-3 w-full pb-0">
+					<div className="w-12 h-12 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(59,130,246,0.5)]">
+						<Image
+							src={appIcon}
+							alt="VersusBoard Logo"
+							width={56}
+							height={56}
+						/>
+					</div>
+					<div className="flex flex-col justify-center">
+						<div className="text-lg">{uiText.app.name}</div>
+						<div className="text-xs">{uiText.welcome.lobbySubtitle}</div>
+					</div>
 				</div>
 
 				<Card className="p-1 bg-black/35 border border-white/10 backdrop-blur-md">
