@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card'
 import { useGameStore } from '@/lib/store'
 import { Crown, Castle, Sword, Cat, LogOut, Wifi } from 'lucide-react'
 import type { GameType, PlayerColor } from '@/lib/common/types'
+import { GreenLightIndicator } from './ui/green-light-indicator'
 
 export function RoomScreen() {
 	const {
@@ -33,7 +34,7 @@ export function RoomScreen() {
 	const isCatAndMouse = pendingGameType === 'cat-and-mouse'
 
 	return (
-		<div className="min-h-screen relative flex flex-col items-center justify-center p-4 texture-background text-white">
+		<div className="min-h-screen relative flex flex-col items-center px-4 py-8 texture-background text-white">
 			<div className="absolute inset-0 bg-black/40" />
 			<div className="relative z-10 w-full max-w-2xl space-y-6">
 				{/* Header / Room Info */}
@@ -42,31 +43,29 @@ export function RoomScreen() {
 						<h2 className="text-lg font-bold flex items-center gap-2">
 							Sala: {currentRoomName}
 						</h2>
-						<p className="text-sm text-white/80">
+						<p className="text-sm text-white/80 text-pretty">
 							{player2
 								? 'Ambos jugadores pueden elegir el juego'
 								: 'Esperando al segundo jugador'}
 						</p>
 					</div>
 					<Button variant="destructive" size="sm" onClick={resetGame}>
-						<LogOut className="w-4 h-4 mr-2" />
-						Salir al Lobby
+						<span className="hidden sm:flex items-center">
+							<LogOut className="w-4 h-4 mr-2" />
+							Salir
+						</span>
+						<span className="sm:hidden">
+							<LogOut className="w-4 h-4" />
+						</span>
 					</Button>
 				</div>
 
 				{/* Players Status */}
 				<div className="grid grid-cols-2 gap-4">
 					{/* Player 1 (Host) */}
-					<Card className="p-4 flex flex-col items-center justify-center space-y-2 relative overflow-hidden bg-black/35 border border-white/10 backdrop-blur-md">
+					<Card className="p-4 gap-3 flex flex-col items-center justify-center relative overflow-hidden bg-black/35 border border-white/10 backdrop-blur-md">
 						<div className="absolute top-2 right-2 flex items-center gap-1">
-							{/* Green Light Indicator */}
-							<div
-								className={`w-3 h-3 rounded-full ${
-									isConnected && player1
-										? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]'
-										: 'bg-gray-300'
-								}`}
-							/>
+							<GreenLightIndicator active={isConnected && !!player1} />
 						</div>
 						<div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
 							<Crown className="w-8 h-8 text-primary" />
@@ -78,16 +77,9 @@ export function RoomScreen() {
 					</Card>
 
 					{/* Player 2 (Guest) */}
-					<Card className="p-4 flex flex-col items-center justify-center space-y-2 relative overflow-hidden bg-black/35 border border-white/10 backdrop-blur-md">
+					<Card className="p-4 gap-3 flex flex-col items-center justify-center relative overflow-hidden bg-black/35 border border-white/10 backdrop-blur-md">
 						<div className="absolute top-2 right-2 flex items-center gap-1">
-							{/* Green Light Indicator */}
-							<div
-								className={`w-3 h-3 rounded-full ${
-									isConnected && player2
-										? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]'
-										: 'bg-gray-300'
-								}`}
-							/>
+							<GreenLightIndicator active={isConnected && !!player2} />
 						</div>
 						<div className="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center">
 							{player2 ? (
@@ -97,9 +89,7 @@ export function RoomScreen() {
 							)}
 						</div>
 						<div className="text-center">
-							<p className="font-bold">
-								{player2?.name || 'Esperando oponente...'}
-							</p>
+							<p className="font-bold">{player2?.name || 'Esperando...'}</p>
 							<p className="text-xs text-white/80">Invitado</p>
 						</div>
 					</Card>
@@ -114,8 +104,8 @@ export function RoomScreen() {
 								Conectados y listos para jugar
 							</span>
 						</div>
-						<h3 className="text-lg font-semibold text-center">
-							Selecciona un juego para comenzar (el primero que confirme inicia)
+						<h3 className="text-medium font-semibold text-center">
+							Selecciona un juego para comenzar
 						</h3>
 						<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 							<GameCard
@@ -141,10 +131,10 @@ export function RoomScreen() {
 									<p className="font-semibold text-center">
 										{isCatAndMouse ? 'Elige tu rol' : 'Elige tu color'}
 									</p>
-									<p className="text-sm text-white/80 text-center">
+									<p className="text-sm text-white/80 text-center text-pretty">
 										{isCatAndMouse
-											? 'Tú eliges ser el Ratón o el Gato; el otro jugador será el contrario.'
-											: 'Tú eliges Blancas o Negras; el otro jugador será el contrario.'}
+											? 'Tú eliges ser el Ratón o el Gato, el otro jugador será el contrario.'
+											: 'Tú eliges Blancas o Negras, el otro jugador será el contrario.'}
 									</p>
 								</div>
 
@@ -182,7 +172,7 @@ export function RoomScreen() {
 					<div className="text-center py-8 space-y-4">
 						<div className="flex flex-col items-center gap-2">
 							<div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-							<p className="text-white/80">
+							<p className="text-white/80 text-pretty">
 								Esperando a que alguien se una a la sala{' '}
 								<strong>"{currentRoomName}"</strong>...
 							</p>

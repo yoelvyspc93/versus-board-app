@@ -42,9 +42,7 @@ export const Square = memo(function Square({
 				}
       `}
 			style={{
-				background: isLight
-					? 'linear-gradient(135deg, #f7e9cf 0%, #f1ddb9 100%)'
-					: 'linear-gradient(135deg, #b24a3d 0%, #8f3129 100%)',
+				background: isLight ? '#F3E1B6' : '#8B2F23',
 			}}
 		>
 			{isValidMove && !isCapture && (
