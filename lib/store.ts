@@ -48,6 +48,7 @@ interface GameStore {
   movePiece: (move: BaseMove) => void
   handleRemoteMove: (move: BaseMove) => void
   returnToRoom: (options?: { notifyRemote?: boolean }) => void
+  surrender: (options?: { notifyRemote?: boolean }) => void
   resetGame: () => void // Fully disconnect
 }
 
@@ -135,6 +136,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
           get().handleRemoteMove(data.move)
         } else if (data.type === "return_room") {
           get().returnToRoom({ notifyRemote: false })
+        } else if (data.type === "surrender") {
+          get().surrender({ notifyRemote: false })
         }
       })
 
@@ -203,6 +206,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
           get().handleRemoteMove(data.move)
         } else if (data.type === "return_room") {
           get().returnToRoom({ notifyRemote: false })
+        } else if (data.type === "surrender") {
+          get().surrender({ notifyRemote: false })
         }
       })
 
@@ -403,6 +408,35 @@ export const useGameStore = create<GameStore>((set, get) => ({
       mustCapture: false,
       continuousCapture: false,
     })
+  },
+
+  surrender: (options) => {
+    const { connection, state, winner, player1, player2, localPlayer } = get()
+    const notifyRemote = options?.notifyRemote ?? true
+
+    // Only during play and only once.
+    if (state !== "in-progress" || winner) return
+
+    const localSide =
+      localPlayer?.id === player1?.id
+        ? player1
+        : localPlayer?.id === player2?.id
+          ? player2
+          : null
+
+    const opponent = localSide?.id === player1?.id ? player2 : player1
+
+    // If this is our local surrender, opponent wins.
+    // If this came from remote (notifyRemote=false), localSide wins.
+    const resolvedWinner = notifyRemote ? opponent : localSide
+
+    if (!resolvedWinner) return
+
+    if (notifyRemote && connection) {
+      connection.send({ type: "surrender" })
+    }
+
+    set({ winner: resolvedWinner, state: "finished" })
   },
 
   resetGame: () => {

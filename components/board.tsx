@@ -92,13 +92,13 @@ export function Board() {
 							const col = isFlippedForLocal ? 7 - uiCol : uiCol
 
 							const position: Position = { row, col }
-			const key = `${row}-${col}`
+							const key = `${row}-${col}`
 
-			const isLight = (row + col) % 2 === 0
+							const isLight = (row + col) % 2 === 0
 
-			// Constant time lookups.
-			const piece = piecesMap.get(key)
-			const validMove = validMovesMap.get(key)
+							// Constant time lookups.
+							const piece = piecesMap.get(key)
+							const validMove = validMovesMap.get(key)
 
 							const isSelected =
 								selectedPiece?.row === row && selectedPiece?.col === col
