@@ -11,7 +11,7 @@ const nextConfig = {
 		unoptimized: true,
 	},
 	basePath,
-	assetPrefix: basePath ? `${basePath}/` : undefined,
+	assetPrefix: basePath ? `${basePath}/` : '/',
 	trailingSlash: true,
 	poweredByHeader: false,
 }
