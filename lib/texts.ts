@@ -2,6 +2,7 @@ export const uiText = {
   app: {
     name: "VersusBoard",
     description: "Plataforma de juegos de mesa multijugador en tiempo real.",
+    descriptionSmall: "Plataforma de juegos de mesa",
     loading: "Cargando VersusBoard...",
   },
   actions: {

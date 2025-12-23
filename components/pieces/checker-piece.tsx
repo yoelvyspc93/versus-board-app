@@ -1,7 +1,7 @@
 'use client'
 
-import { Crown } from 'lucide-react'
 import { motion } from 'framer-motion'
+import Image from 'next/image'
 import type { PlayerColor } from '@/lib/common/types'
 
 interface CheckerPieceProps {
@@ -19,58 +19,52 @@ export function CheckerPiece({
 	isDisabled,
 	onClick,
 }: CheckerPieceProps) {
-	// Theme: match reference image (red vs black)
-	const isRed = color === 'light'
+	const isLight = color === 'light'
+	const pieceSrc = isKing
+		? isLight
+			? '/checker-king-light.png'
+			: '/checker-king-dark.png'
+		: isLight
+		? '/checker-light.png'
+		: '/checker-dark.png'
 
 	return (
 		<motion.div
 			onClick={onClick}
 			className={`
-        relative w-full h-full rounded-full
+        relative w-full h-full
         transition-all duration-200
         ${
 					isDisabled
 						? 'cursor-not-allowed opacity-60'
 						: 'cursor-pointer hover:scale-105'
 				}
-        ${isSelected ? 'scale-110 shadow-xl' : 'shadow-lg'}
+        ${isSelected ? 'scale-110' : ''}
       `}
 			style={{
-				background: isRed
-					? 'radial-gradient(circle at 30% 25%, #DC4747FF 0%, #C62828 40%, #C62828 100%)'
-					: 'radial-gradient(circle at 30% 25%, #383838FF 0%, #1E1E1E 45%, #1E1E1E 100%)',
-				border: `3px solid ${isRed ? '#DE7979FF' : '#161616FF'}`,
-				boxShadow: isSelected
-					? '0 8px 20px rgba(0,0,0,0.45), 0 0 18px rgba(255,200,150,0.6), inset 0 2px 4px rgba(255,255,255,0.3)'
-					: '0 4px 14px rgba(0,0,0,0.35), inset 0 2px 4px rgba(255,255,255,0.2)',
+				filter: isDisabled ? 'grayscale(0.15)' : undefined,
 			}}
 			initial={false}
 			animate={isKing ? { scale: [1, 1.2, 1] } : {}}
 			transition={{ duration: 0.3 }}
 		>
-			<div
-				className="absolute inset-0 rounded-full opacity-30"
-				style={{
-					background:
-						'radial-gradient(circle at 30% 25%, rgba(255,255,255,0.55), transparent 55%)',
-				}}
+			<Image
+				src={pieceSrc}
+				alt={isKing ? 'King checker piece' : 'Checker piece'}
+				fill
+				sizes="(max-width: 768px) 10vw, 64px"
+				className="select-none pointer-events-none object-contain drop-shadow-lg"
+				priority={false}
 			/>
 
-			{isKing && (
-				<motion.div
-					className="absolute inset-0 flex items-center justify-center"
-					initial={{ scale: 0 }}
-					animate={{ scale: 1 }}
-					transition={{ type: 'spring', stiffness: 500, damping: 15 }}
-				>
-					<Crown
-						className={`w-1/2 h-1/2 ${
-							isRed ? 'text-[#ffe3c9]' : 'text-[#ffd38c]'
-						}`}
-						strokeWidth={2.5}
-						fill="currentColor"
-					/>
-				</motion.div>
+			{isSelected && (
+				<div
+					className="absolute inset-0 rounded-full pointer-events-none"
+					style={{
+						boxShadow:
+							'0 8px 20px rgba(0,0,0,0.45), 0 0 18px rgba(255,200,150,0.6)',
+					}}
+				/>
 			)}
 		</motion.div>
 	)

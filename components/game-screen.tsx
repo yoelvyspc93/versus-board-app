@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { useGameStore } from '@/lib/store'
 import { Board } from './board'
 import { Button } from '@/components/ui/button'
@@ -10,6 +11,9 @@ import { uiText } from '@/lib/texts'
 import { WinnerBanner } from './game/winner-banner'
 import { PlayerSummary } from './game/player-summary'
 import { AppBackground } from '@/components/ui/app-background'
+import appIcon from '@/public/icon.webp'
+import Image from 'next/image'
+import { Modal } from '@/components/ui/modal'
 
 export function GameScreen() {
 	const {
@@ -21,7 +25,10 @@ export function GameScreen() {
 		pieces,
 		returnToRoom,
 		gameType,
+		surrender,
 	} = useGameStore()
+
+	const [isInstructionsOpen, setIsInstructionsOpen] = useState(false)
 
 	const getGameInfo = () => {
 		switch (gameType) {
@@ -53,13 +60,19 @@ export function GameScreen() {
 			<AppBackground variant="texture" />
 			<div className="absolute inset-0 bg-black/30" aria-hidden />
 			<div className="relative z-10 w-full max-w-2xl space-y-6">
-				<div className="flex items-center justify-center gap-3">
-					<div className="w-12 h-12 rounded-full bg-black/25 border border-white/10 backdrop-blur-md flex items-center justify-center">
-						<GameIcon className="w-6 h-6 text-white" />
+				<div className="flex items-center gap-3 w-full pb-0">
+					<div className="w-12 h-12 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(59,130,246,0.5)]">
+						<Image
+							src={appIcon}
+							alt="VersusBoard Logo"
+							width={56}
+							height={56}
+						/>
 					</div>
-					<h1 className="text-2xl font-bold tracking-tight">
-						{uiText.app.name} - {gameName}
-					</h1>
+					<div className="flex flex-col justify-center">
+						<div className="text-lg">{uiText.app.name}</div>
+						<div className="text-xs">Juego de {gameName}</div>
+					</div>
 				</div>
 
 				<div className="grid grid-cols-2 gap-4">
@@ -120,35 +133,66 @@ export function GameScreen() {
 
 				<Board />
 
-				<Card className="p-4 bg-black/35 backdrop-blur-md border border-white/10 shadow-lg">
-					<CardTitle>Cómo jugar {gameName}:</CardTitle>
-					<div className="text-sm text-white/80">
-						{gameType === 'checkers' && (
-							<ul className="list-disc list-inside space-y-1 ml-4">
-								{uiText.instructions.checkers.map((item) => (
-									<li key={item}>{item}</li>
-								))}
-							</ul>
-						)}
-						{gameType === 'come-come' && (
-							<ul className="list-disc list-inside space-y-1 ml-4">
-								{uiText.instructions.comeCome.map((item) => (
-									<li key={item}>{item}</li>
-								))}
-							</ul>
-						)}
-						{gameType === 'cat-and-mouse' && (
-							<ul className="list-disc list-inside space-y-1 ml-4">
-								{uiText.instructions.catAndMouse.map((item) => (
-									<li key={item}>{item}</li>
-								))}
-							</ul>
-						)}
-					</div>
-				</Card>
+				<Modal
+					open={isInstructionsOpen}
+					onOpenChange={setIsInstructionsOpen}
+					ariaLabel={`Instrucciones de ${gameName}`}
+					contentClassName="max-w-lg"
+				>
+					<Card className="p-4 bg-black/35 backdrop-blur-md border border-white/10 shadow-lg">
+						<CardTitle>Cómo jugar {gameName}:</CardTitle>
+						<div className="text-sm text-white/80">
+							{gameType === 'checkers' && (
+								<ul className="list-disc list-inside space-y-1 ml-4">
+									{uiText.instructions.checkers.map((item) => (
+										<li key={item}>{item}</li>
+									))}
+								</ul>
+							)}
+							{gameType === 'come-come' && (
+								<ul className="list-disc list-inside space-y-1 ml-4">
+									{uiText.instructions.comeCome.map((item) => (
+										<li key={item}>{item}</li>
+									))}
+								</ul>
+							)}
+							{gameType === 'cat-and-mouse' && (
+								<ul className="list-disc list-inside space-y-1 ml-4">
+									{uiText.instructions.catAndMouse.map((item) => (
+										<li key={item}>{item}</li>
+									))}
+								</ul>
+							)}
+						</div>
+
+						<div className="mt-4 flex justify-end">
+							<Button
+								variant="secondary"
+								className="shadow-md"
+								onClick={() => setIsInstructionsOpen(false)}
+							>
+								Cerrar
+							</Button>
+						</div>
+					</Card>
+				</Modal>
 
 				{!winner && (
 					<div className="flex gap-3 justify-center flex-wrap">
+						<Button
+							onClick={() => setIsInstructionsOpen(true)}
+							variant="secondary"
+							className="shadow-md"
+						>
+							Instrucciones
+						</Button>
+						<Button
+							onClick={() => surrender()}
+							variant="destructive"
+							className="shadow-md"
+						>
+							Rendirse
+						</Button>
 						<Button
 							onClick={() => returnToRoom()}
 							variant="default"

@@ -10,6 +10,9 @@ import { uiText } from '@/lib/texts'
 import { GameOptionCard } from './game/game-option-card'
 import { PlayerCard } from './game/player-card'
 import { AppBackground } from '@/components/ui/app-background'
+import { Modal } from '@/components/ui/modal'
+import Image from 'next/image'
+import appIcon from '@/public/icon.webp'
 
 export function RoomScreen() {
 	const {
@@ -41,6 +44,15 @@ export function RoomScreen() {
 	return (
 		<div className="min-h-screen relative flex flex-col items-center px-4 py-8 text-white">
 			<AppBackground variant="texture" />
+			<div className="flex  items-center gap-3 w-full pb-4">
+				<div className="w-12 h-12 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(59,130,246,0.5)]">
+					<Image src={appIcon} alt="VersusBoard Logo" width={56} height={56} />
+				</div>
+				<div className="flex flex-col justify-center">
+					<div className="text-lg">{uiText.app.name}</div>
+					<div className="text-xs">{uiText.app.descriptionSmall}</div>
+				</div>
+			</div>
 			<div className="absolute inset-0 bg-black/30" aria-hidden />
 			<div className="relative z-10 w-full max-w-2xl space-y-6">
 				<div className="flex items-center justify-between bg-black/35 border border-white/10 p-4 rounded-lg shadow-sm backdrop-blur-md">
@@ -94,20 +106,7 @@ export function RoomScreen() {
 				</div>
 
 				{player2 ? (
-					<div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
-						<div className="flex items-center justify-center gap-2 mb-4 text-sm">
-							<Wifi
-								className={`w-5 h-5 ${
-									isConnected ? 'text-green-600' : 'text-amber-400'
-								}`}
-								aria-hidden
-							/>
-							<span className="font-medium text-green-300">
-								{isConnected
-									? uiText.connection.ready
-									: uiText.connection.unstable}
-							</span>
-						</div>
+					<div className="space-y-4 py-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
 						<h3 className="text-medium font-semibold text-center">
 							{uiText.games.selectToStart}
 						</h3>
@@ -131,55 +130,6 @@ export function RoomScreen() {
 								onClick={() => handleSelectGame('cat-and-mouse')}
 							/>
 						</div>
-
-						{pendingGameType && (
-							<Card className="p-4 border border-white/10 bg-black/35 backdrop-blur-md space-y-3">
-								<div className="space-y-1">
-									<p className="font-semibold text-center">
-										{isCatAndMouse
-											? uiText.games.chooseRole
-											: uiText.games.chooseColor}
-									</p>
-									<p className="text-sm text-white/80 text-center text-pretty">
-										{isCatAndMouse
-											? uiText.games.chooseRoleDescription
-											: uiText.games.chooseColorDescription}
-									</p>
-								</div>
-
-								<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-									<Button
-										variant="default"
-										className="h-12"
-										onClick={() => handleConfirmStart('dark')}
-									>
-										{isCatAndMouse
-											? uiText.actions.pickMouse
-											: uiText.actions.pickDark}
-									</Button>
-									<Button
-										variant="secondary"
-										className="h-12"
-										onClick={() => handleConfirmStart('light')}
-									>
-										{isCatAndMouse
-											? uiText.actions.pickCat
-											: uiText.actions.pickLight}
-									</Button>
-								</div>
-
-								<div className="flex justify-center">
-									<Button
-										variant="ghost"
-										size="sm"
-										onClick={() => setPendingGameType(null)}
-										className="text-white/80 hover:text-white"
-									>
-										{uiText.actions.cancel}
-									</Button>
-								</div>
-							</Card>
-						)}
 					</div>
 				) : (
 					<div className="text-center py-8 space-y-4">
@@ -211,6 +161,65 @@ export function RoomScreen() {
 					</div>
 				)}
 			</div>
+			{pendingGameType && (
+				<Modal
+					open={!!pendingGameType}
+					onOpenChange={(open) => {
+						if (!open) setPendingGameType(null)
+					}}
+					ariaLabel={
+						isCatAndMouse ? uiText.games.chooseRole : uiText.games.chooseColor
+					}
+					contentClassName="max-w-lg"
+				>
+					<Card className="p-4 border border-white/10 bg-black/35 backdrop-blur-md space-y-3">
+						<div className="space-y-1">
+							<p className="font-semibold text-center">
+								{isCatAndMouse
+									? uiText.games.chooseRole
+									: uiText.games.chooseColor}
+							</p>
+							<p className="text-sm text-white/80 text-center text-pretty">
+								{isCatAndMouse
+									? uiText.games.chooseRoleDescription
+									: uiText.games.chooseColorDescription}
+							</p>
+						</div>
+
+						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+							<Button
+								variant="default"
+								className="h-12"
+								onClick={() => handleConfirmStart('dark')}
+							>
+								{isCatAndMouse
+									? uiText.actions.pickMouse
+									: uiText.actions.pickDark}
+							</Button>
+							<Button
+								variant="secondary"
+								className="h-12"
+								onClick={() => handleConfirmStart('light')}
+							>
+								{isCatAndMouse
+									? uiText.actions.pickCat
+									: uiText.actions.pickLight}
+							</Button>
+						</div>
+
+						<div className="flex justify-center">
+							<Button
+								variant="ghost"
+								size="sm"
+								onClick={() => setPendingGameType(null)}
+								className="text-white/80 hover:text-white"
+							>
+								{uiText.actions.cancel}
+							</Button>
+						</div>
+					</Card>
+				</Modal>
+			)}
 		</div>
 	)
 }

@@ -42,7 +42,12 @@ export const Square = memo(function Square({
 				}
       `}
 			style={{
-				background: isLight ? '#F3E1B6' : '#8B2F23',
+				backgroundImage: `url('${
+					isLight ? '/texture-square-light.png' : '/texture-square-dark.png'
+				}')`,
+				backgroundSize: 'cover',
+				backgroundPosition: 'center',
+				backgroundRepeat: 'no-repeat',
 			}}
 		>
 			{isValidMove && !isCapture && (

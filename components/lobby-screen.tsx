@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { ArrowRight, Plus, Users } from 'lucide-react'
-import appIcon from '@/public/icon.png'
+import appIcon from '@/public/icon.webp'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
@@ -69,7 +69,6 @@ export function LobbyScreen() {
 							/>
 						</div>
 					</div>
-
 					<div className="space-y-2">
 						<h1 className="text-5xl font-extrabold tracking-tight">
 							{uiText.welcome.title}
