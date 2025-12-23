@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
 import { useGameStore } from '@/lib/store'
 import { Crown, Radio, Users, ArrowRight, Plus } from 'lucide-react'
+import Image from 'next/image'
 
 export function LobbyScreen() {
 	// Local UI state
@@ -32,10 +33,11 @@ export function LobbyScreen() {
 		storeSetPlayerName(playerName)
 
 		try {
+			const normalizedRoomName = roomName.toLowerCase().trim()
 			if (mode === 'create') {
-				await createRoom(roomName)
+				await createRoom(normalizedRoomName)
 			} else {
-				await joinRoom(roomName)
+				await joinRoom(normalizedRoomName)
 			}
 		} catch (e) {
 			console.error(e)
@@ -45,12 +47,17 @@ export function LobbyScreen() {
 
 	if (view === 'welcome') {
 		return (
-			<div className="min-h-screen relative flex flex-col items-center justify-center p-4 text-white lobby-background">
-				<div className="absolute inset-0 bg-black/40" />
-				<div className="relative z-10 max-w-md w-full text-center space-y-8 animate-in fade-in zoom-in duration-500">
+			<div className="min-h-screen relative flex flex-col items-center justify-center px-8 py-8 text-white lobby-background">
+				<div className="absolute inset-0 bg-black/60" />
+				<div className="relative z-10 max-w-md w-full text-center space-y-2 animate-in fade-in zoom-in duration-500">
 					<div className="flex justify-center">
-						<div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(59,130,246,0.5)]">
-							<Crown className="w-12 h-12 text-white" />
+						<div className="w-24 h-24 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(59,130,246,0.5)]">
+							<Image
+								src="/icon.png"
+								alt="VersusBoard Logo"
+								width={100}
+								height={100}
+							/>
 						</div>
 					</div>
 
@@ -58,18 +65,16 @@ export function LobbyScreen() {
 						<h1 className="text-5xl font-extrabold tracking-tight">
 							VersusBoard
 						</h1>
-						<p className="text-slate-400 text-lg">
+						<p className="text-slate-400 text-lg text-pretty">
 							Plataforma de Juegos de Mesa Multijugador
 						</p>
 					</div>
-
-					<div className="pt-8">
+					<div className="pt-2">
 						<Button
 							size="lg"
-							className="w-full h-16 text-xl font-bold rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 gap-3"
+							className="px-16 h-16 text-xl font-bold rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 gap-3"
 							onClick={handleConnect}
 						>
-							<Radio className="w-6 h-6 animate-pulse" />
 							Conectarse
 						</Button>
 					</div>
@@ -79,7 +84,7 @@ export function LobbyScreen() {
 	}
 
 	return (
-		<div className="min-h-screen relative flex flex-col items-center justify-center p-4 texture-background text-white">
+		<div className="min-h-screen relative flex flex-col items-center p-4 py-8 texture-background text-white">
 			<div className="absolute inset-0 bg-black/40" />
 			<div className="relative z-10 w-full max-w-md space-y-6 animate-in slide-in-from-right duration-300">
 				<div className="text-center space-y-2">

@@ -13,7 +13,7 @@
   --primary: #8b3b20;
   --primary-foreground: #ffffff;
   --secondary: #f5f1e8;
-  --secondary-foreground: #dbb7a0;
+  --secondary-foreground: #8b3b20;
   --muted: #f5f1e8;
   --muted-foreground: #6b5d56;
   --accent: #c79a6b;
@@ -38,10 +38,7 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
-  --bg-lobby-mobile: none;
-  --bg-lobby-desktop: none;
-  --bg-texture-mobile: none;
-  --bg-texture-desktop: none;
+  --asset-prefix: /;
 }
 
 .dark {

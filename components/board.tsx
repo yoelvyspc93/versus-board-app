@@ -74,21 +74,8 @@ export function Board() {
 
 	return (
 		<div className="w-full max-w-2xl mx-auto">
-			{/* Board frame (wood) */}
-			<div
-				className="rounded-[28px] p-[10px] shadow-[0_22px_55px_rgba(0,0,0,0.45)]"
-				style={{
-					background:
-						'linear-gradient(135deg, #f2d1a8 0%, #d7aa7c 35%, #c28f60 70%, #f1cfaa 100%)',
-				}}
-			>
-				<div
-					className="rounded-[22px] p-[8px]"
-					style={{
-						background:
-							'linear-gradient(135deg, rgba(255,255,255,0.35) 0%, rgba(0,0,0,0.10) 100%)',
-					}}
-				>
+			<div className="rounded-[24px] shadow-[0_22px_55px_rgba(0,0,0,0.45)] bg-[#D6A46C]">
+				<div className="rounded-[24px] p-[8px] sm:p-[16px]">
 					<div
 						className="grid grid-cols-8 gap-0 rounded-[16px] overflow-hidden"
 						style={{

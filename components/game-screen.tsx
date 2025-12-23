@@ -5,6 +5,7 @@ import { Board } from './board'
 import { Button } from '@/components/ui/button'
 import { Card, CardTitle } from '@/components/ui/card'
 import { Crown, Trophy, Users, Sword, Cat, Mouse } from 'lucide-react'
+import { GameAvatar } from './ui/game-avatar'
 
 export function GameScreen() {
 	const {
@@ -75,7 +76,7 @@ export function GameScreen() {
 					<Card
 						className={`p-4 transition-all bg-black/35 backdrop-blur-md shadow-xl border border-white/10 ${
 							player1?.color === currentTurn && !winner
-								? 'ring-2 ring-[#ffd38c] shadow-[0_0_25px_rgba(255,211,140,0.6)]'
+								? 'ring-2 ring-[#D6A46C] shadow-[0_0_25px_rgba(255,211,140,0.6)]'
 								: ''
 						}`}
 					>
@@ -86,17 +87,7 @@ export function GameScreen() {
 										<Player1RoleIcon className="w-5 h-5 text-amber-700" />
 									</div>
 								) : (
-									<div
-										className="w-8 h-8 rounded-full border-2 flex-shrink-0"
-										style={{
-											background:
-												player1?.color === 'dark'
-													? 'radial-gradient(circle, #a24826, #8b3b20)'
-													: 'radial-gradient(circle, #f9e7c3, #e8d4a8)',
-											borderColor:
-												player1?.color === 'dark' ? '#6b2f1a' : '#d4c3a0',
-										}}
-									/>
+									<GameAvatar isPlayer1={player1?.color === 'dark'} />
 								)}
 								<div className="flex-1 min-w-0 flex items-center gap-1">
 									<p className="font-semibold truncate">
@@ -106,15 +97,6 @@ export function GameScreen() {
 										<span className="text-xs text-white/70">(Tú)</span>
 									)}
 								</div>
-							</div>
-							<div className="flex items-center justify-between text-sm">
-								<span className="text-white/80">
-									{getPlayerRole(player1?.color)}
-								</span>
-								<span className="font-semibold flex items-center gap-1">
-									<Users className="w-3 h-3" />
-									{player1Pieces}
-								</span>
 							</div>
 						</div>
 					</Card>
@@ -133,17 +115,7 @@ export function GameScreen() {
 										<Player2RoleIcon className="w-5 h-5 text-amber-700" />
 									</div>
 								) : (
-									<div
-										className="w-8 h-8 rounded-full border-2 flex-shrink-0"
-										style={{
-											background:
-												player2?.color === 'dark'
-													? 'radial-gradient(circle, #a24826, #8b3b20)'
-													: 'radial-gradient(circle, #f9e7c3, #e8d4a8)',
-											borderColor:
-												player2?.color === 'dark' ? '#6b2f1a' : '#d4c3a0',
-										}}
-									/>
+									<GameAvatar isPlayer1={player2?.color === 'dark'} />
 								)}
 								<div className="flex-1 min-w-0 flex items-center gap-1">
 									<p className="font-semibold truncate">
@@ -154,15 +126,6 @@ export function GameScreen() {
 									)}
 								</div>
 							</div>
-							<div className="flex items-center justify-between text-sm">
-								<span className="text-white/80">
-									{getPlayerRole(player2?.color)}
-								</span>
-								<span className="font-semibold flex items-center gap-1">
-									<Users className="w-3 h-3" />
-									{player2Pieces}
-								</span>
-							</div>
 						</div>
 					</Card>
 				</div>
@@ -170,7 +133,7 @@ export function GameScreen() {
 				{winner && (
 					<Card className="p-6 text-center bg-black/45 border border-white/10 backdrop-blur-md shadow-2xl">
 						<div className="space-y-4">
-							<Trophy className="w-16 h-16 mx-auto text-amber-300 drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]" />
+							<Trophy className="w-16 h-16 mx-auto text-[#D6A46C] drop-shadow-[0_4px_10px_rgba(0,0,0,0.5)]" />
 							<div>
 								<p className="text-2xl font-bold text-white">
 									¡Ganador: {winner.name}!
@@ -182,7 +145,7 @@ export function GameScreen() {
 									variant="default"
 									className="shadow-md"
 								>
-									Volver a jugar
+									Ir al lobby
 								</Button>
 							</div>
 						</div>
@@ -192,7 +155,7 @@ export function GameScreen() {
 				<Board />
 
 				<Card className="p-4 bg-black/35 backdrop-blur-md border border-white/10 shadow-lg">
-					<CardTitle className="mb-2">Cómo jugar {gameName}:</CardTitle>
+					<CardTitle>Cómo jugar {gameName}:</CardTitle>
 					<div className="text-sm text-white/80">
 						{gameType === 'checkers' && (
 							<ul className="list-disc list-inside space-y-1 ml-4">
@@ -237,6 +200,18 @@ export function GameScreen() {
 						)}
 					</div>
 				</Card>
+
+				{!winner && (
+					<div className="flex gap-3 justify-center flex-wrap">
+						<Button
+							onClick={() => returnToRoom()}
+							variant="default"
+							className="shadow-md"
+						>
+							Ir al lobby
+						</Button>
+					</div>
+				)}
 			</div>
 		</div>
 	)
