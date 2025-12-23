@@ -4,6 +4,11 @@ import { motion } from 'framer-motion'
 import Image from 'next/image'
 import type { PlayerColor } from '@/lib/common/types'
 
+import checkerLight from '@/public/checker-light.png'
+import checkerDark from '@/public/checker-dark.png'
+import checkerKingLight from '@/public/checker-king-light.png'
+import checkerKingDark from '@/public/checker-king-dark.png'
+
 interface CheckerPieceProps {
 	color: PlayerColor
 	isKing: boolean
@@ -22,11 +27,11 @@ export function CheckerPiece({
 	const isLight = color === 'light'
 	const pieceSrc = isKing
 		? isLight
-			? '/checker-king-light.png'
-			: '/checker-king-dark.png'
+			? checkerKingLight
+			: checkerKingDark
 		: isLight
-		? '/checker-light.png'
-		: '/checker-dark.png'
+		? checkerLight
+		: checkerDark
 
 	return (
 		<motion.div

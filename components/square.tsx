@@ -4,6 +4,8 @@ import type React from 'react'
 import { memo } from 'react'
 import type { Position } from '@/lib/common/types'
 import { Crown } from 'lucide-react'
+import squareTextureLight from '@/public/texture-square-light.png'
+import squareTextureDark from '@/public/texture-square-dark.png'
 
 interface SquareProps {
 	position: Position
@@ -43,7 +45,7 @@ export const Square = memo(function Square({
       `}
 			style={{
 				backgroundImage: `url('${
-					isLight ? '/texture-square-light.png' : '/texture-square-dark.png'
+					isLight ? squareTextureLight.src : squareTextureDark.src
 				}')`,
 				backgroundSize: 'cover',
 				backgroundPosition: 'center',
