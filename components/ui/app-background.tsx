@@ -1,6 +1,10 @@
 'use client'
 
 import Image from 'next/image'
+import lobbyMobileBg from '@/public/lobby-screen-mobile.webp'
+import lobbyDesktopBg from '@/public/lobby-screen-desktop.webp'
+import textureMobileBg from '@/public/texture-mobile.webp'
+import textureDesktopBg from '@/public/texture-desktop.webp'
 
 type AppBackgroundVariant = 'lobby' | 'texture'
 
@@ -8,14 +12,14 @@ function getVariantConfig(variant: AppBackgroundVariant) {
 	switch (variant) {
 		case 'lobby':
 			return {
-				mobileSrc: '/lobby-screen-mobile.webp',
-				desktopSrc: '/lobby-screen-desktop.webp',
+				mobileSrc: lobbyMobileBg,
+				desktopSrc: lobbyDesktopBg,
 				gradientClassName: 'bg-gradient-to-b from-black/[0.45] to-black/[0.65]',
 			}
 		case 'texture':
 			return {
-				mobileSrc: '/texture-mobile.webp',
-				desktopSrc: '/texture-desktop.webp',
+				mobileSrc: textureMobileBg,
+				desktopSrc: textureDesktopBg,
 				gradientClassName: 'bg-gradient-to-b from-black/[0.45] to-black/[0.65]',
 			}
 		default:

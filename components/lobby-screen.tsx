@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Image from 'next/image'
 import { ArrowRight, Plus, Users } from 'lucide-react'
+import appIcon from '@/public/icon.png'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
@@ -61,7 +62,7 @@ export function LobbyScreen() {
 					<div className="flex justify-center">
 						<div className="w-24 h-24 rounded-full flex items-center justify-center shadow-[0_0_30px_rgba(59,130,246,0.5)]">
 							<Image
-								src="/icon.png"
+								src={appIcon}
 								alt="VersusBoard Logo"
 								width={100}
 								height={100}
