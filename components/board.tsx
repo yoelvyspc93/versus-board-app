@@ -22,16 +22,16 @@ export function Board() {
 	let isFlippedForLocal = false
 	if (localPlayer) {
 		if (gameType === 'cat-and-mouse') {
-			// En Gato y Ratón, los Gatos (light) están en la fila 0 (arriba).
-			// Si soy Gato, invierto el tablero para ver mis piezas abajo.
+			// In Cat and Mouse, cats (light) start on the top row.
+			// Flip the board for the cat so their pieces appear at the bottom.
 			isFlippedForLocal = localPlayer.color === 'light'
 		} else {
-			// En Damas, el Player 1 siempre empieza en las filas superiores.
+			// For checkers-based games, player 1 starts on top rows.
 			isFlippedForLocal = !!player1 && localPlayer.id === player1.id
 		}
 	}
 
-	// Optimización 1: Mapas de búsqueda rápida O(1)
+	// Quick lookup maps to avoid repeated scans.
 	const piecesMap = useMemo(() => {
 		const map = new Map<string, BasePiece>()
 		for (const p of pieces) {
@@ -92,13 +92,13 @@ export function Board() {
 							const col = isFlippedForLocal ? 7 - uiCol : uiCol
 
 							const position: Position = { row, col }
-							const key = `${row}-${col}`
+			const key = `${row}-${col}`
 
-							const isLight = (row + col) % 2 === 0
+			const isLight = (row + col) % 2 === 0
 
-							// Optimización: Búsqueda en mapa O(1)
-							const piece = piecesMap.get(key)
-							const validMove = validMovesMap.get(key)
+			// Constant time lookups.
+			const piece = piecesMap.get(key)
+			const validMove = validMovesMap.get(key)
 
 							const isSelected =
 								selectedPiece?.row === row && selectedPiece?.col === col

@@ -2,6 +2,7 @@ import { create } from "zustand"
 import type { Position, Player, PlayerColor, GameType, GameState, BaseMove, BasePiece } from "./common/types"
 import { GameConnection, type ConnectionStatus } from "./common/connection"
 import { GameEngine } from "./game-engine"
+import { uiText } from "./texts"
 
 interface ActiveRoom {
   id: string
@@ -87,6 +88,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!localPlayer) return
 
     try {
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        throw new Error(uiText.connection.offline)
+      }
       // Disconnect existing if any
       get().connection?.disconnect()
 
@@ -145,8 +149,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
       })
     } catch (error) {
       console.error("Error creating room:", error)
-      alert(`Error al crear la sala: ${error instanceof Error ? error.message : "Error desconocido"}`)
-      set({ state: "lobby" })
+      alert(`${uiText.errors.createRoom} ${error instanceof Error ? error.message : "Error desconocido"}`)
+      set({ state: "lobby", connectionStatus: "error" })
     }
   },
 
@@ -155,6 +159,9 @@ export const useGameStore = create<GameStore>((set, get) => ({
     if (!localPlayer) return
 
     try {
+      if (typeof navigator !== "undefined" && !navigator.onLine) {
+        throw new Error(uiText.connection.offline)
+      }
       get().connection?.disconnect()
 
       const connection = new GameConnection()
@@ -209,8 +216,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     } catch (error) {
       console.error("Error joining room:", error)
-      alert(`Error al unirse a la sala: ${error instanceof Error ? error.message : "Error desconocido"}`)
-      set({ state: "lobby" })
+      alert(`${uiText.errors.joinRoom} ${error instanceof Error ? error.message : "Error desconocido"}`)
+      set({ state: "lobby", connectionStatus: "error" })
     }
   },
 

@@ -4,9 +4,11 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { useGameStore } from '@/lib/store'
-import { Crown, Castle, Sword, Cat, LogOut, Wifi } from 'lucide-react'
+import { Crown, Sword, Cat, LogOut, Wifi, Mouse } from 'lucide-react'
 import type { GameType, PlayerColor } from '@/lib/common/types'
-import { GreenLightIndicator } from './ui/green-light-indicator'
+import { uiText } from '@/lib/texts'
+import { GameOptionCard } from './game/game-option-card'
+import { PlayerCard } from './game/player-card'
 
 export function RoomScreen() {
 	const {
@@ -31,28 +33,29 @@ export function RoomScreen() {
 	}
 
 	const isConnected = connectionStatus === 'connected'
+	const isConnecting = connectionStatus === 'connecting'
 	const isCatAndMouse = pendingGameType === 'cat-and-mouse'
+	const showConnectionWarning = connectionStatus === 'error'
 
 	return (
 		<div className="min-h-screen relative flex flex-col items-center px-4 py-8 texture-background text-white">
-			<div className="absolute inset-0 bg-black/40" />
+			<div className="absolute inset-0 bg-black/30" aria-hidden />
 			<div className="relative z-10 w-full max-w-2xl space-y-6">
-				{/* Header / Room Info */}
 				<div className="flex items-center justify-between bg-black/35 border border-white/10 p-4 rounded-lg shadow-sm backdrop-blur-md">
 					<div>
 						<h2 className="text-lg font-bold flex items-center gap-2">
-							Sala: {currentRoomName}
+							{uiText.room.title}: {currentRoomName}
 						</h2>
 						<p className="text-sm text-white/80 text-pretty">
 							{player2
-								? 'Ambos jugadores pueden elegir el juego'
-								: 'Esperando al segundo jugador'}
+								? uiText.room.createDescription
+								: uiText.room.waitingGuest}
 						</p>
 					</div>
 					<Button variant="destructive" size="sm" onClick={resetGame}>
 						<span className="hidden sm:flex items-center">
 							<LogOut className="w-4 h-4 mr-2" />
-							Salir
+							{uiText.actions.leaveRoom}
 						</span>
 						<span className="sm:hidden">
 							<LogOut className="w-4 h-4" />
@@ -60,67 +63,59 @@ export function RoomScreen() {
 					</Button>
 				</div>
 
-				{/* Players Status */}
 				<div className="grid grid-cols-2 gap-4">
-					{/* Player 1 (Host) */}
-					<Card className="p-4 gap-3 flex flex-col items-center justify-center relative overflow-hidden bg-black/35 border border-white/10 backdrop-blur-md">
-						<div className="absolute top-2 right-2 flex items-center gap-1">
-							<GreenLightIndicator active={isConnected && !!player1} />
-						</div>
-						<div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-							<Crown className="w-8 h-8 text-primary" />
-						</div>
-						<div className="text-center">
-							<p className="font-bold">{player1?.name || 'Esperando...'}</p>
-							<p className="text-xs text-white/80">Anfitrión</p>
-						</div>
-					</Card>
+					<PlayerCard
+						title={player1?.name || uiText.players.waiting}
+						subtitle={uiText.players.host}
+						icon={<Crown className="w-8 h-8 text-primary" aria-hidden />}
+						isActive={isConnected && !!player1}
+					/>
 
-					{/* Player 2 (Guest) */}
-					<Card className="p-4 gap-3 flex flex-col items-center justify-center relative overflow-hidden bg-black/35 border border-white/10 backdrop-blur-md">
-						<div className="absolute top-2 right-2 flex items-center gap-1">
-							<GreenLightIndicator active={isConnected && !!player2} />
-						</div>
-						<div className="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center">
-							{player2 ? (
-								<Sword className="w-8 h-8 text-secondary-foreground" />
+					<PlayerCard
+						title={player2?.name || uiText.players.waiting}
+						subtitle={uiText.players.guest}
+						icon={
+							player2 ? (
+								<Sword className="w-8 h-8 text-secondary-foreground" aria-hidden />
 							) : (
-								<div className="w-8 h-8 animate-pulse bg-muted rounded-full" />
-							)}
-						</div>
-						<div className="text-center">
-							<p className="font-bold">{player2?.name || 'Esperando...'}</p>
-							<p className="text-xs text-white/80">Invitado</p>
-						</div>
-					</Card>
+								<div className="w-8 h-8 animate-pulse bg-muted rounded-full" aria-hidden />
+							)
+						}
+						isActive={isConnected && !!player2}
+					/>
 				</div>
 
-				{/* Game Selection (Both Players) */}
 				{player2 ? (
 					<div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
-						<div className="flex items-center justify-center gap-2 mb-4">
-							<Wifi className="w-5 h-5 text-green-600" />
-							<span className="text-sm font-medium text-green-300">
-								Conectados y listos para jugar
+						<div className="flex items-center justify-center gap-2 mb-4 text-sm">
+							<Wifi
+								className={`w-5 h-5 ${isConnected ? 'text-green-600' : 'text-amber-400'}`}
+								aria-hidden
+							/>
+							<span className="font-medium text-green-300">
+								{isConnected ? uiText.connection.ready : uiText.connection.unstable}
 							</span>
 						</div>
 						<h3 className="text-medium font-semibold text-center">
-							Selecciona un juego para comenzar
+							{uiText.games.selectToStart}
 						</h3>
 						<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-							<GameCard
+							<GameOptionCard
 								icon={<Crown className="w-8 h-8 text-primary" />}
-								title="Damas"
+								title={uiText.games.checkers.name}
+								description={uiText.room.cards.checkers}
 								onClick={() => handleSelectGame('checkers')}
 							/>
-							<GameCard
+							<GameOptionCard
 								icon={<Sword className="w-8 h-8 text-orange-500" />}
-								title="Come-Come"
+								title={uiText.games.comeCome.name}
+								description={uiText.room.cards.comeCome}
 								onClick={() => handleSelectGame('come-come')}
 							/>
-							<GameCard
+							<GameOptionCard
 								icon={<Cat className="w-8 h-8 text-blue-500" />}
-								title="Gato y Ratón"
+								title={uiText.games.catAndMouse.name}
+								description={uiText.room.cards.catMouse}
 								onClick={() => handleSelectGame('cat-and-mouse')}
 							/>
 						</div>
@@ -129,12 +124,12 @@ export function RoomScreen() {
 							<Card className="p-4 border border-white/10 bg-black/35 backdrop-blur-md space-y-3">
 								<div className="space-y-1">
 									<p className="font-semibold text-center">
-										{isCatAndMouse ? 'Elige tu rol' : 'Elige tu color'}
+										{isCatAndMouse ? uiText.games.chooseRole : uiText.games.chooseColor}
 									</p>
 									<p className="text-sm text-white/80 text-center text-pretty">
 										{isCatAndMouse
-											? 'Tú eliges ser el Ratón o el Gato, el otro jugador será el contrario.'
-											: 'Tú eliges Blancas o Negras, el otro jugador será el contrario.'}
+											? uiText.games.chooseRoleDescription
+											: uiText.games.chooseColorDescription}
 									</p>
 								</div>
 
@@ -144,14 +139,14 @@ export function RoomScreen() {
 										className="h-12"
 										onClick={() => handleConfirmStart('dark')}
 									>
-										{isCatAndMouse ? 'Yo soy el Ratón' : 'Yo juego con Negras'}
+										{isCatAndMouse ? uiText.actions.pickMouse : uiText.actions.pickDark}
 									</Button>
 									<Button
 										variant="secondary"
 										className="h-12"
 										onClick={() => handleConfirmStart('light')}
 									>
-										{isCatAndMouse ? 'Yo soy el Gato' : 'Yo juego con Blancas'}
+										{isCatAndMouse ? uiText.actions.pickCat : uiText.actions.pickLight}
 									</Button>
 								</div>
 
@@ -162,7 +157,7 @@ export function RoomScreen() {
 										onClick={() => setPendingGameType(null)}
 										className="text-white/80 hover:text-white"
 									>
-										Cancelar
+										{uiText.actions.cancel}
 									</Button>
 								</div>
 							</Card>
@@ -171,37 +166,27 @@ export function RoomScreen() {
 				) : (
 					<div className="text-center py-8 space-y-4">
 						<div className="flex flex-col items-center gap-2">
-							<div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+							<div
+								className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"
+								role="status"
+								aria-label={uiText.connection.waitingGuest(currentRoomName ?? '')}
+							/>
 							<p className="text-white/80 text-pretty">
-								Esperando a que alguien se una a la sala{' '}
-								<strong>"{currentRoomName}"</strong>...
+								{currentRoomName ? uiText.connection.waitingGuest(currentRoomName) : ''}
 							</p>
+							{isConnecting ? (
+								<p className="text-xs text-amber-200 flex items-center gap-1">
+									<Mouse className="w-4 h-4" />
+									<span>{uiText.room.reconnecting}</span>
+								</p>
+							) : null}
+							{showConnectionWarning ? (
+								<p className="text-xs text-red-200">{uiText.connection.offline}</p>
+							) : null}
 						</div>
 					</div>
 				)}
 			</div>
 		</div>
-	)
-}
-
-function GameCard({
-	icon,
-	title,
-	onClick,
-}: {
-	icon: React.ReactNode
-	title: string
-	onClick: () => void
-}) {
-	return (
-		<Card
-			onClick={onClick}
-			className="p-4 cursor-pointer hover:bg-white/10 hover:shadow-md transition-all flex flex-col items-center gap-3 border border-white/10 bg-black/25 backdrop-blur-md"
-		>
-			<div className="p-3 rounded-full bg-black/25 border border-white/10 shadow-sm">
-				{icon}
-			</div>
-			<span className="font-bold">{title}</span>
-		</Card>
 	)
 }

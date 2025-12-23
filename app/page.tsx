@@ -4,6 +4,7 @@ import { useGameStore } from "@/lib/store"
 import { LobbyScreen } from "@/components/lobby-screen"
 import { RoomScreen } from "@/components/room-screen"
 import { GameScreen } from "@/components/game-screen"
+import { uiText } from "@/lib/texts"
 
 
 export default function Home() {
@@ -27,7 +28,7 @@ export default function Home() {
       <div className="absolute inset-0 bg-black/40" />
       <div className="relative z-10 text-center space-y-4">
         <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
-        <h2 className="text-2xl font-bold">Cargando VersusBoard...</h2>
+        <h2 className="text-2xl font-bold">{uiText.app.loading}</h2>
       </div>
     </div>
   )

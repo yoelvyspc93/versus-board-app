@@ -52,9 +52,8 @@ class CheckersStrategy implements GameLogicStrategy {
     return checkersHasPlayerLost(pieces as any, playerColor)
   }
   getWinner(pieces: BasePiece[], currentTurn: PlayerColor, player1Color: PlayerColor): PlayerColor | null {
-    // En damas, si el jugador actual ha perdido (no tiene movimientos), gana el otro.
-    // Esta lógica se maneja fuera normalmente, pero aquí definimos quién gana si el juego termina.
-    // Si hasPlayerLost es true para currentTurn, entonces el ganador es el opuesto.
+    // In checkers, if the current player has no moves, the opponent wins.
+    // If hasPlayerLost is true for currentTurn, the winner is the opposite color.
     return currentTurn === "dark" ? "light" : "dark"
   }
 }
@@ -79,18 +78,14 @@ class ComeComeStrategy implements GameLogicStrategy {
     return comeComeHasPlayerLost(pieces as any, playerColor)
   }
   getWinner(pieces: BasePiece[], currentTurn: PlayerColor, player1Color: PlayerColor): PlayerColor | null {
-    // El usuario solicitó que el que se queda sin fichas PIERDA (como en Damas normales).
-    // Originalmente Come-Come es misère (gana quien pierde fichas), pero cambiamos la lógica según instrucción.
+    // Adjusted to align with regular checkers: the player without moves loses.
     return currentTurn === "dark" ? "light" : "dark"
   }
 }
 
 class CatAndMouseStrategy implements GameLogicStrategy {
   initializePieces(player1Color: PlayerColor): BasePiece[] {
-    // En Gato y Ratón, el ratón (dark) siempre es un jugador específico, pero aquí player1Color define setup
-    // Sin embargo, la función original toma mouseColor. Asumiremos player1Color determina mouseColor por compatibilidad
-    // Pero en la lógica original: initializeCatAndMousePieces("dark") siempre se llama con dark.
-    // Ajustaremos para que sea consistente con la llamada en store.
+    // Cat and Mouse always starts with the mouse (dark) defined as player1Color for setup compatibility.
     return initializeCatAndMousePieces("dark")
   }
   getValidMoves(position: Position, pieces: BasePiece[], playerColor: PlayerColor): BaseMove[] {
@@ -126,4 +121,3 @@ export class GameEngine {
     return this.strategies[gameType] || this.strategies.checkers
   }
 }
-

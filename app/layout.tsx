@@ -3,8 +3,17 @@ import type { Metadata, Viewport } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 
-const _geist = Geist({ subsets: ['latin'] })
-const _geistMono = Geist_Mono({ subsets: ['latin'] })
+const geistSans = Geist({
+	subsets: ['latin'],
+	display: 'swap',
+	variable: '--font-geist-sans',
+})
+
+const geistMono = Geist_Mono({
+	subsets: ['latin'],
+	display: 'swap',
+	variable: '--font-geist-mono',
+})
 
 export const metadata: Metadata = {
 	title: 'VersusBoard - Juego de Damas en Tiempo Real',
@@ -48,7 +57,9 @@ export default function RootLayout({
 				['--bg-texture-desktop' as any]: `url('${assetPrefix}texture-desktop.webp')`,
 			}}
 		>
-			<body className={`font-sans antialiased`}>{children}</body>
+			<body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased bg-background text-foreground`}>
+				{children}
+			</body>
 		</html>
 	)
 }
