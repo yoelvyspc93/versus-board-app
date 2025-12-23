@@ -9,6 +9,7 @@ import { GameAvatar } from './ui/game-avatar'
 import { uiText } from '@/lib/texts'
 import { WinnerBanner } from './game/winner-banner'
 import { PlayerSummary } from './game/player-summary'
+import { AppBackground } from '@/components/ui/app-background'
 
 export function GameScreen() {
 	const {
@@ -48,7 +49,8 @@ export function GameScreen() {
 	const Player2RoleIcon = getPlayerIcon(player2?.color)
 
 	return (
-		<div className="min-h-screen relative flex flex-col items-center justify-center p-4 texture-background text-white">
+		<div className="min-h-screen relative flex flex-col items-center justify-center p-4 text-white">
+			<AppBackground variant="texture" />
 			<div className="absolute inset-0 bg-black/30" aria-hidden />
 			<div className="relative z-10 w-full max-w-2xl space-y-6">
 				<div className="flex items-center justify-center gap-3">
@@ -63,11 +65,18 @@ export function GameScreen() {
 				<div className="grid grid-cols-2 gap-4">
 					<PlayerSummary
 						name={player1?.name ?? uiText.players.generic}
-						annotation={localPlayer?.name === player1?.name ? uiText.players.you : undefined}
+						annotation={
+							localPlayer?.name === player1?.name
+								? uiText.players.you
+								: undefined
+						}
 						icon={
 							gameType === 'cat-and-mouse' && Player1RoleIcon ? (
-								<div className="w-8 h-8 rounded-full border-2 flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-amber-100 to-amber-200 border-amber-400">
-									<Player1RoleIcon className="w-5 h-5 text-amber-700" aria-hidden />
+								<div className="w-8 h-8 rounded-full border-2 shrink-0 flex items-center justify-center bg-linear-to-br from-amber-100 to-amber-200 border-amber-400">
+									<Player1RoleIcon
+										className="w-5 h-5 text-amber-700"
+										aria-hidden
+									/>
 								</div>
 							) : (
 								<GameAvatar isPlayer1={player1?.color === 'dark'} />
@@ -79,11 +88,18 @@ export function GameScreen() {
 
 					<PlayerSummary
 						name={player2?.name ?? uiText.players.generic}
-						annotation={localPlayer?.name === player2?.name ? uiText.players.you : undefined}
+						annotation={
+							localPlayer?.name === player2?.name
+								? uiText.players.you
+								: undefined
+						}
 						icon={
 							gameType === 'cat-and-mouse' && Player2RoleIcon ? (
-								<div className="w-8 h-8 rounded-full border-2 flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-amber-100 to-amber-200 border-amber-400">
-									<Player2RoleIcon className="w-5 h-5 text-amber-700" aria-hidden />
+								<div className="w-8 h-8 rounded-full border-2 shrink-0 flex items-center justify-center bg-linear-to-br from-amber-100 to-amber-200 border-amber-400">
+									<Player2RoleIcon
+										className="w-5 h-5 text-amber-700"
+										aria-hidden
+									/>
 								</div>
 							) : (
 								<GameAvatar isPlayer1={player2?.color === 'dark'} />

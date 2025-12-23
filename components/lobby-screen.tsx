@@ -6,6 +6,7 @@ import { ArrowRight, Plus, Users } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card } from '@/components/ui/card'
+import { AppBackground } from '@/components/ui/app-background'
 import { useGameStore } from '@/lib/store'
 import { uiText } from '@/lib/texts'
 
@@ -53,7 +54,8 @@ export function LobbyScreen() {
 
 	if (view === 'welcome') {
 		return (
-			<div className="min-h-screen relative flex flex-col items-center justify-center px-8 py-8 text-white lobby-background">
+			<div className="min-h-screen relative flex flex-col items-center justify-center px-8 py-8 text-white">
+				<AppBackground variant="lobby" priority />
 				<div className="absolute inset-0 bg-black/40" aria-hidden />
 				<div className="relative z-10 max-w-md w-full text-center space-y-2 animate-in fade-in zoom-in duration-500">
 					<div className="flex justify-center">
@@ -68,8 +70,12 @@ export function LobbyScreen() {
 					</div>
 
 					<div className="space-y-2">
-						<h1 className="text-5xl font-extrabold tracking-tight">{uiText.welcome.title}</h1>
-						<p className="text-slate-200 text-lg text-pretty">{uiText.welcome.subtitle}</p>
+						<h1 className="text-5xl font-extrabold tracking-tight">
+							{uiText.welcome.title}
+						</h1>
+						<p className="text-slate-200 text-lg text-pretty">
+							{uiText.welcome.subtitle}
+						</p>
 					</div>
 					<div className="pt-2">
 						<Button
@@ -86,11 +92,14 @@ export function LobbyScreen() {
 	}
 
 	return (
-		<div className="min-h-screen relative flex flex-col items-center p-4 py-8 texture-background text-white">
+		<div className="min-h-screen relative flex flex-col items-center p-4 py-8 text-white">
+			<AppBackground variant="texture" />
 			<div className="absolute inset-0 bg-black/30" aria-hidden />
 			<div className="relative z-10 w-full max-w-md space-y-6 animate-in slide-in-from-right duration-300">
 				<div className="text-center space-y-2">
-					<h2 className="text-3xl font-bold tracking-tight">{uiText.welcome.lobbyTitle}</h2>
+					<h2 className="text-3xl font-bold tracking-tight">
+						{uiText.welcome.lobbyTitle}
+					</h2>
 					<p className="text-white/80">{uiText.welcome.lobbySubtitle}</p>
 				</div>
 
@@ -171,7 +180,10 @@ export function LobbyScreen() {
 						{mode === 'join' && (
 							<div className="space-y-4">
 								<div className="space-y-2">
-									<label className="text-sm font-medium" htmlFor="room-name-join">
+									<label
+										className="text-sm font-medium"
+										htmlFor="room-name-join"
+									>
 										{uiText.forms.joinRoomLabel}
 									</label>
 									<Input

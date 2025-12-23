@@ -15,6 +15,10 @@ const geistMono = Geist_Mono({
 	variable: '--font-geist-mono',
 })
 
+const basePathRaw = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
+const normalizedBasePath = basePathRaw.replace(/^\/+|\/+$/g, '')
+const basePath = normalizedBasePath ? `/${normalizedBasePath}` : ''
+
 export const metadata: Metadata = {
 	title: 'VersusBoard - Juego de Damas en Tiempo Real',
 	description:
@@ -22,11 +26,11 @@ export const metadata: Metadata = {
 	icons: {
 		icon: [
 			{
-				url: '/icon.png',
+				url: `${basePath}/icon.png`,
 				type: 'image/png',
 			},
 		],
-		apple: '/apple-icon.png',
+		apple: `${basePath}/apple-icon.png`,
 	},
 }
 
@@ -42,22 +46,11 @@ export default function RootLayout({
 }: Readonly<{
 	children: React.ReactNode
 }>) {
-	const basePathRaw = process.env.NEXT_PUBLIC_BASE_PATH ?? ''
-	const normalized = basePathRaw.replace(/^\/+|\/+$/g, '')
-	const assetPrefix = normalized ? `/${normalized}/` : '/'
-
 	return (
-		<html
-			lang="es"
-			style={{
-				['--asset-prefix' as any]: assetPrefix,
-				['--bg-lobby-mobile' as any]: `url('${assetPrefix}lobby-screen-mobile.webp')`,
-				['--bg-lobby-desktop' as any]: `url('${assetPrefix}lobby-screen-desktop.webp')`,
-				['--bg-texture-mobile' as any]: `url('${assetPrefix}texture-mobile.webp')`,
-				['--bg-texture-desktop' as any]: `url('${assetPrefix}texture-desktop.webp')`,
-			}}
-		>
-			<body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased bg-background text-foreground`}>
+		<html lang="es">
+			<body
+				className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased bg-background text-foreground`}
+			>
 				{children}
 			</body>
 		</html>

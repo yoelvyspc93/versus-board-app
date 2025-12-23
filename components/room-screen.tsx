@@ -9,6 +9,7 @@ import type { GameType, PlayerColor } from '@/lib/common/types'
 import { uiText } from '@/lib/texts'
 import { GameOptionCard } from './game/game-option-card'
 import { PlayerCard } from './game/player-card'
+import { AppBackground } from '@/components/ui/app-background'
 
 export function RoomScreen() {
 	const {
@@ -38,7 +39,8 @@ export function RoomScreen() {
 	const showConnectionWarning = connectionStatus === 'error'
 
 	return (
-		<div className="min-h-screen relative flex flex-col items-center px-4 py-8 texture-background text-white">
+		<div className="min-h-screen relative flex flex-col items-center px-4 py-8 text-white">
+			<AppBackground variant="texture" />
 			<div className="absolute inset-0 bg-black/30" aria-hidden />
 			<div className="relative z-10 w-full max-w-2xl space-y-6">
 				<div className="flex items-center justify-between bg-black/35 border border-white/10 p-4 rounded-lg shadow-sm backdrop-blur-md">
@@ -76,9 +78,15 @@ export function RoomScreen() {
 						subtitle={uiText.players.guest}
 						icon={
 							player2 ? (
-								<Sword className="w-8 h-8 text-secondary-foreground" aria-hidden />
+								<Sword
+									className="w-8 h-8 text-secondary-foreground"
+									aria-hidden
+								/>
 							) : (
-								<div className="w-8 h-8 animate-pulse bg-muted rounded-full" aria-hidden />
+								<div
+									className="w-8 h-8 animate-pulse bg-muted rounded-full"
+									aria-hidden
+								/>
 							)
 						}
 						isActive={isConnected && !!player2}
@@ -89,11 +97,15 @@ export function RoomScreen() {
 					<div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500">
 						<div className="flex items-center justify-center gap-2 mb-4 text-sm">
 							<Wifi
-								className={`w-5 h-5 ${isConnected ? 'text-green-600' : 'text-amber-400'}`}
+								className={`w-5 h-5 ${
+									isConnected ? 'text-green-600' : 'text-amber-400'
+								}`}
 								aria-hidden
 							/>
 							<span className="font-medium text-green-300">
-								{isConnected ? uiText.connection.ready : uiText.connection.unstable}
+								{isConnected
+									? uiText.connection.ready
+									: uiText.connection.unstable}
 							</span>
 						</div>
 						<h3 className="text-medium font-semibold text-center">
@@ -124,7 +136,9 @@ export function RoomScreen() {
 							<Card className="p-4 border border-white/10 bg-black/35 backdrop-blur-md space-y-3">
 								<div className="space-y-1">
 									<p className="font-semibold text-center">
-										{isCatAndMouse ? uiText.games.chooseRole : uiText.games.chooseColor}
+										{isCatAndMouse
+											? uiText.games.chooseRole
+											: uiText.games.chooseColor}
 									</p>
 									<p className="text-sm text-white/80 text-center text-pretty">
 										{isCatAndMouse
@@ -139,14 +153,18 @@ export function RoomScreen() {
 										className="h-12"
 										onClick={() => handleConfirmStart('dark')}
 									>
-										{isCatAndMouse ? uiText.actions.pickMouse : uiText.actions.pickDark}
+										{isCatAndMouse
+											? uiText.actions.pickMouse
+											: uiText.actions.pickDark}
 									</Button>
 									<Button
 										variant="secondary"
 										className="h-12"
 										onClick={() => handleConfirmStart('light')}
 									>
-										{isCatAndMouse ? uiText.actions.pickCat : uiText.actions.pickLight}
+										{isCatAndMouse
+											? uiText.actions.pickCat
+											: uiText.actions.pickLight}
 									</Button>
 								</div>
 
@@ -169,10 +187,14 @@ export function RoomScreen() {
 							<div
 								className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"
 								role="status"
-								aria-label={uiText.connection.waitingGuest(currentRoomName ?? '')}
+								aria-label={uiText.connection.waitingGuest(
+									currentRoomName ?? ''
+								)}
 							/>
 							<p className="text-white/80 text-pretty">
-								{currentRoomName ? uiText.connection.waitingGuest(currentRoomName) : ''}
+								{currentRoomName
+									? uiText.connection.waitingGuest(currentRoomName)
+									: ''}
 							</p>
 							{isConnecting ? (
 								<p className="text-xs text-amber-200 flex items-center gap-1">
@@ -181,7 +203,9 @@ export function RoomScreen() {
 								</p>
 							) : null}
 							{showConnectionWarning ? (
-								<p className="text-xs text-red-200">{uiText.connection.offline}</p>
+								<p className="text-xs text-red-200">
+									{uiText.connection.offline}
+								</p>
 							) : null}
 						</div>
 					</div>

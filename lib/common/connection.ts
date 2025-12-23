@@ -35,7 +35,7 @@ export class GameConnection {
     return new Promise((resolve, reject) => {
       // If host, we try to take the specific Room ID.
       // If guest, we don't care about our ID, just let PeerJS assign one.
-      const peerId = isHost ? this.sanitizeRoomId(roomId) : undefined
+      const peerId = isHost ? this.sanitizeRoomId(roomId) : ""
 
       this.peer = new Peer(peerId, {
         debug: 0,

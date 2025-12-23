@@ -21,7 +21,6 @@
   --ring: #d6a46c;
   --success: #4ccb34;
   --radius: 0.75rem;
-  --asset-prefix: /;
 }
 
 @theme inline {
@@ -60,30 +59,4 @@
   }
 }
 
-@layer utilities {
-  .lobby-background {
-    background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.85)), var(--bg-lobby-mobile);
-    background-repeat: no-repeat;
-    background-size: cover;
-    background-position: center;
-  }
-
-  @media (min-width: 768px) {
-    .lobby-background {
-      background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.85)), var(--bg-lobby-desktop);
-    }
-  }
-
-  .texture-background {
-    background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.9)), var(--bg-texture-mobile);
-    background-repeat: no-repeat;
-    background-size: cover;
-    background-position: center;
-  }
-
-  @media (min-width: 768px) {
-    .texture-background {
-      background-image: linear-gradient(180deg, rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.9)), var(--bg-texture-desktop);
-    }
-  }
-}
+@layer utilities {}
