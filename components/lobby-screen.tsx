@@ -79,7 +79,7 @@ export function LobbyScreen() {
 							{uiText.welcome.subtitle}
 						</p>
 					</div>
-					<div className="pt-2 space-y-3">
+					<div className="pt-10 space-y-3">
 						<Button
 							size="lg"
 							className="px-16 h-16 text-xl font-bold rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 gap-3"
@@ -90,7 +90,7 @@ export function LobbyScreen() {
 						<Button
 							size="lg"
 							variant="secondary"
-							className="px-12 h-14 text-lg font-semibold rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 gap-3 w-full"
+							className="px-16 h-16 text-xl font-bold rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 gap-3"
 							onClick={handlePlayOffline}
 						>
 							{uiText.actions.playOffline}
