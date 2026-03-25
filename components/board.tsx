@@ -16,10 +16,11 @@ export function Board() {
 		movePiece,
 		gameType,
 		validMoves,
+		sessionMode,
 	} = useGameStore()
 
 	let isFlippedForLocal = false
-	if (localPlayer) {
+	if (sessionMode !== 'local' && localPlayer) {
 		if (gameType === 'cat-and-mouse') {
 			// In Cat and Mouse, cats (light) start on the top row.
 			// Flip the board for the cat so their pieces appear at the bottom.
@@ -57,9 +58,11 @@ export function Board() {
 		return map
 	}, [validMoves])
 
+	const controllableColor =
+		sessionMode === 'local' ? currentTurn : localPlayer?.color ?? null
+
 	const handleSquareClick = (position: Position) => {
-		if (!localPlayer) return
-		if (currentTurn !== localPlayer.color) return
+		if (!controllableColor) return
 
 		const pieceAtPosition = piecesMap.get(`${position.row}-${position.col}`)
 		const move = validMovesMap.get(`${position.row}-${position.col}`)
@@ -70,13 +73,13 @@ export function Board() {
 				selectPiece(null)
 			} else if (
 				pieceAtPosition &&
-				pieceAtPosition.color === localPlayer.color
+				pieceAtPosition.color === controllableColor
 			) {
 				selectPiece(position)
 			} else {
 				selectPiece(null)
 			}
-		} else if (pieceAtPosition && pieceAtPosition.color === localPlayer.color) {
+		} else if (pieceAtPosition && pieceAtPosition.color === controllableColor) {
 			selectPiece(position)
 		}
 	}
@@ -135,9 +138,8 @@ export function Board() {
 											isSelected={isSelected}
 											onClick={() => handleSquareClick(position)}
 											isDisabled={
-												!localPlayer ||
-												piece.color !== localPlayer.color ||
-												currentTurn !== localPlayer.color
+												!controllableColor ||
+												piece.color !== controllableColor
 											}
 										/>
 									)}

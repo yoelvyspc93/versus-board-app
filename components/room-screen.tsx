@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { useGameStore } from '@/lib/store'
-import { Crown, Sword, Cat, LogOut, Wifi, Mouse } from 'lucide-react'
+import { Crown, Sword, Cat, LogOut, Mouse } from 'lucide-react'
 import type { GameType, PlayerColor } from '@/lib/common/types'
 import { uiText } from '@/lib/texts'
 import { GameOptionCard } from './game/game-option-card'
@@ -22,6 +22,7 @@ export function RoomScreen() {
 		startGame,
 		resetGame, // This disconnects and goes back to lobby
 		connectionStatus,
+		sessionMode,
 	} = useGameStore()
 
 	const [pendingGameType, setPendingGameType] = useState<GameType | null>(null)
@@ -40,6 +41,8 @@ export function RoomScreen() {
 	const isConnecting = connectionStatus === 'connecting'
 	const isCatAndMouse = pendingGameType === 'cat-and-mouse'
 	const showConnectionWarning = connectionStatus === 'error'
+	const isLocalSession = sessionMode === 'local'
+	const isSessionReady = isLocalSession || isConnected
 
 	return (
 		<div className="min-h-screen relative flex flex-col items-center px-4 py-8 text-white">
@@ -58,10 +61,14 @@ export function RoomScreen() {
 				<div className="flex items-center justify-between bg-black/35 border border-white/10 p-4 rounded-lg shadow-sm backdrop-blur-md">
 					<div>
 						<h2 className="text-lg font-bold flex items-center gap-2">
-							{uiText.room.title}: {currentRoomName}
+							{isLocalSession
+								? uiText.room.localTitle
+								: `${uiText.room.title}: ${currentRoomName}`}
 						</h2>
 						<p className="text-sm text-white/80 text-pretty">
-							{player2
+							{isLocalSession
+								? uiText.room.localDescription
+								: player2
 								? uiText.room.createDescription
 								: uiText.room.waitingGuest}
 						</p>
@@ -80,14 +87,14 @@ export function RoomScreen() {
 				<div className="grid grid-cols-2 gap-4">
 					<PlayerCard
 						title={player1?.name || uiText.players.waiting}
-						subtitle={uiText.players.host}
+						subtitle={isLocalSession ? undefined : uiText.players.host}
 						icon={<Crown className="w-8 h-8 text-primary" aria-hidden />}
-						isActive={isConnected && !!player1}
+						isActive={isSessionReady && !!player1}
 					/>
 
 					<PlayerCard
 						title={player2?.name || uiText.players.waiting}
-						subtitle={uiText.players.guest}
+						subtitle={isLocalSession ? undefined : uiText.players.guest}
 						icon={
 							player2 ? (
 								<Sword
@@ -101,7 +108,7 @@ export function RoomScreen() {
 								/>
 							)
 						}
-						isActive={isConnected && !!player2}
+						isActive={isSessionReady && !!player2}
 					/>
 				</div>
 
@@ -180,9 +187,13 @@ export function RoomScreen() {
 									: uiText.games.chooseColor}
 							</p>
 							<p className="text-sm text-white/80 text-center text-pretty">
-								{isCatAndMouse
-									? uiText.games.chooseRoleDescription
-									: uiText.games.chooseColorDescription}
+								{isLocalSession
+									? isCatAndMouse
+										? uiText.games.chooseRoleDescriptionLocal
+										: uiText.games.chooseColorDescriptionLocal
+									: isCatAndMouse
+										? uiText.games.chooseRoleDescription
+										: uiText.games.chooseColorDescription}
 							</p>
 						</div>
 
@@ -192,18 +203,26 @@ export function RoomScreen() {
 								className="h-12"
 								onClick={() => handleConfirmStart('dark')}
 							>
-								{isCatAndMouse
-									? uiText.actions.pickMouse
-									: uiText.actions.pickDark}
+								{isLocalSession
+									? isCatAndMouse
+										? uiText.actions.pickMouseLocal
+										: uiText.actions.pickDarkLocal
+									: isCatAndMouse
+										? uiText.actions.pickMouse
+										: uiText.actions.pickDark}
 							</Button>
 							<Button
 								variant="secondary"
 								className="h-12"
 								onClick={() => handleConfirmStart('light')}
 							>
-								{isCatAndMouse
-									? uiText.actions.pickCat
-									: uiText.actions.pickLight}
+								{isLocalSession
+									? isCatAndMouse
+										? uiText.actions.pickCatLocal
+										: uiText.actions.pickLightLocal
+									: isCatAndMouse
+										? uiText.actions.pickCat
+										: uiText.actions.pickLight}
 							</Button>
 						</div>
 
