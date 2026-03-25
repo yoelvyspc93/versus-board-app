@@ -1,6 +1,7 @@
 export type PlayerColor = "light" | "dark"
 export type GameState = "lobby" | "room" | "waiting-player" | "in-progress" | "finished"
 export type GameType = "checkers" | "come-come" | "cat-and-mouse" | "chess"
+export type SessionMode = "online" | "local"
 
 export interface Position {
   row: number

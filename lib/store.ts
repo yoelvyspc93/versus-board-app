@@ -1,5 +1,5 @@
 import { create } from "zustand"
-import type { Position, Player, PlayerColor, GameType, GameState, BaseMove, BasePiece } from "./common/types"
+import type { Position, Player, PlayerColor, GameType, GameState, BaseMove, BasePiece, SessionMode } from "./common/types"
 import { GameConnection, type ConnectionStatus } from "./common/connection"
 import { GameEngine } from "./game-engine"
 import { uiText } from "./texts"
@@ -12,6 +12,7 @@ interface ActiveRoom {
 
 interface GameStore {
   state: GameState
+  sessionMode: SessionMode
   gameType: GameType
   currentRoomName: string | null
   currentRoomId: string | null
@@ -37,6 +38,7 @@ interface GameStore {
 
   // Actions
   setPlayerName: (name: string) => void
+  startLocalSession: () => void
   fetchRooms: () => Promise<void> // New action
   createRoom: (roomName: string) => Promise<void>
   joinRoom: (roomName: string) => Promise<void>
@@ -54,6 +56,7 @@ interface GameStore {
 
 export const useGameStore = create<GameStore>((set, get) => ({
   state: "lobby",
+  sessionMode: "online",
   gameType: "checkers",
   currentRoomName: null,
   currentRoomId: null,
@@ -77,6 +80,32 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
   setPlayerName: (name: string) => {
     set({ localPlayer: { id: "local", name, color: "dark" } })
+  },
+
+  startLocalSession: () => {
+    get().connection?.disconnect()
+
+    set({
+      state: "room",
+      sessionMode: "local",
+      gameType: "checkers",
+      currentRoomName: uiText.room.localSessionName,
+      currentRoomId: null,
+      isHost: true,
+      player1: { id: "local-p1", name: uiText.players.localPlayer1, color: "dark" },
+      player2: { id: "local-p2", name: uiText.players.localPlayer2, color: "light" },
+      currentTurn: "dark",
+      pieces: [],
+      winner: null,
+      selectedPiece: null,
+      validMoves: [],
+      mustCapture: false,
+      continuousCapture: false,
+      connection: null,
+      connectionStatus: "disconnected",
+      localPlayer: null,
+      remotePeerId: null,
+    })
   },
 
   fetchRooms: async () => {
@@ -108,8 +137,6 @@ export const useGameStore = create<GameStore>((set, get) => ({
       const peerId = await connection.initialize(roomName, true)
 
       connection.onMessage((data) => {
-        const { state } = get()
-
         if (data.type === "join") {
           // Guest joined the room
           const player2: Player = {
@@ -143,6 +170,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
       set({
         connection,
+        sessionMode: "online",
         currentRoomName: roomName,
         currentRoomId: peerId,
         isHost: true,
@@ -153,7 +181,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     } catch (error) {
       console.error("Error creating room:", error)
       alert(`${uiText.errors.createRoom} ${error instanceof Error ? error.message : "Error desconocido"}`)
-      set({ state: "lobby", connectionStatus: "error" })
+      set({ state: "lobby", sessionMode: "online", connectionStatus: "error" })
     }
   },
 
@@ -217,68 +245,78 @@ export const useGameStore = create<GameStore>((set, get) => ({
         playerName: localPlayer.name
       })
 
-      set({ connection })
+      set({ connection, sessionMode: "online" })
 
     } catch (error) {
       console.error("Error joining room:", error)
       alert(`${uiText.errors.joinRoom} ${error instanceof Error ? error.message : "Error desconocido"}`)
-      set({ state: "lobby", connectionStatus: "error" })
+      set({ state: "lobby", sessionMode: "online", connectionStatus: "error" })
     }
   },
 
   startGame: (gameType: GameType, options) => {
-    const { connection, player1, player2, isHost, state } = get()
-    if (!connection || !player2) return
+    const { connection, player1, player2, isHost, state, sessionMode } = get()
+    if (!player1 || !player2) return
 
     // Only start from the room; once started, ignore further selections/requests.
     if (state !== "room") return
 
-    if (!isHost) {
+    if (sessionMode === "online" && (!connection || !isHost)) {
+      if (!connection) return
       connection.send({ type: "request_start_game", gameType, starterColor: options?.starterColor ?? "dark" })
       return
     }
 
-    const startedBy = options?.startedBy ?? "local"
     const starterColor: PlayerColor = options?.starterColor ?? "dark"
+    const startingTurn: PlayerColor = gameType === "cat-and-mouse" ? "dark" : starterColor
+    const engine = GameEngine.get(gameType)
 
-    // Logic to randomize colors or keep fixed
     let player1Color: PlayerColor
     let player2Color: PlayerColor
 
-    // Selector chooses their side/role, the other player gets the opposite.
-    // If host started: host is player1.
-    // If guest started: guest is player2.
-    if (startedBy === "local") {
+    if (sessionMode === "local") {
       player1Color = starterColor
       player2Color = starterColor === "dark" ? "light" : "dark"
     } else {
-      player2Color = starterColor
-      player1Color = starterColor === "dark" ? "light" : "dark"
+      const startedBy = options?.startedBy ?? "local"
+
+      // Selector chooses their side/role, the other player gets the opposite.
+      // If host started: host is player1.
+      // If guest started: guest is player2.
+      if (startedBy === "local") {
+        player1Color = starterColor
+        player2Color = starterColor === "dark" ? "light" : "dark"
+      } else {
+        player2Color = starterColor
+        player1Color = starterColor === "dark" ? "light" : "dark"
+      }
     }
 
-    const engine = GameEngine.get(gameType)
     const newPieces = engine.initializePieces(player1Color)
 
-    // Update Local
     set({
       state: "in-progress",
       gameType,
       pieces: newPieces,
-      currentTurn: starterColor,
+      currentTurn: startingTurn,
       player1: { ...player1!, color: player1Color },
       player2: { ...player2!, color: player2Color },
-      localPlayer: { ...get().localPlayer!, color: player1Color }
+      localPlayer:
+        sessionMode === "online" && get().localPlayer
+          ? { ...get().localPlayer!, color: player1Color }
+          : null,
     })
 
-    // Send to Guest
-    connection.send({
-      type: "start_game",
-      gameType,
-      yourColor: player2Color,
-      pieces: newPieces,
-      opponentName: player1!.name,
-      currentTurn: starterColor
-    })
+    if (sessionMode === "online" && connection) {
+      connection.send({
+        type: "start_game",
+        gameType,
+        yourColor: player2Color,
+        pieces: newPieces,
+        opponentName: player1.name,
+        currentTurn: startingTurn
+      })
+    }
   },
 
   selectPiece: (position: Position | null) => {
@@ -411,11 +449,20 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   surrender: (options) => {
-    const { connection, state, winner, player1, player2, localPlayer } = get()
+    const { connection, state, winner, player1, player2, localPlayer, sessionMode, currentTurn } = get()
     const notifyRemote = options?.notifyRemote ?? true
 
     // Only during play and only once.
     if (state !== "in-progress" || winner) return
+
+    if (sessionMode === "local") {
+      const resolvedWinner = currentTurn === player1?.color ? player2 : player1
+
+      if (!resolvedWinner) return
+
+      set({ winner: resolvedWinner, state: "finished" })
+      return
+    }
 
     const localSide =
       localPlayer?.id === player1?.id
@@ -440,7 +487,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   },
 
   resetGame: () => {
-    const { connection, isHost, currentRoomId } = get()
+    const { connection } = get()
 
     if (connection) {
       connection.disconnect()
@@ -448,6 +495,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
 
     set({
       state: "lobby",
+      sessionMode: "online",
       gameType: "checkers",
       player1: null,
       player2: null,

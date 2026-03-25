@@ -24,10 +24,10 @@ export function GameScreen() {
 		currentTurn,
 		localPlayer,
 		winner,
-		pieces,
 		returnToRoom,
 		gameType,
 		surrender,
+		sessionMode,
 	} = useGameStore()
 
 	const [isInstructionsOpen, setIsInstructionsOpen] = useState(false)
@@ -49,7 +49,7 @@ export function GameScreen() {
 		}
 	}
 
-	const { icon: GameIcon, name: gameName } = getGameInfo()
+	const { name: gameName } = getGameInfo()
 
 	const getPlayerIcon = (color: 'dark' | 'light' | undefined) => {
 		if (gameType === 'cat-and-mouse') {
@@ -61,10 +61,22 @@ export function GameScreen() {
 	const Player1RoleIcon = getPlayerIcon(player1?.color)
 	const Player2RoleIcon = getPlayerIcon(player2?.color)
 
+	const isLocalSession = sessionMode === 'local'
+	const currentTurnPlayer =
+		currentTurn === player1?.color
+			? player1
+			: currentTurn === player2?.color
+				? player2
+				: null
+
 	const confirmCopy =
 		confirmAction.kind === 'surrender'
-			? uiText.confirmations.surrender
-			: uiText.confirmations.goToLobby
+			? isLocalSession
+				? uiText.confirmations.surrenderLocal
+				: uiText.confirmations.surrender
+			: isLocalSession
+				? uiText.confirmations.goToLobbyLocal
+				: uiText.confirmations.goToLobby
 
 	const colorLabel = (c: 'dark' | 'light' | undefined) =>
 		c === 'dark' ? uiText.actions.pickDark : uiText.actions.pickLight
@@ -101,7 +113,7 @@ export function GameScreen() {
 					<PlayerSummary
 						name={player1?.name ?? uiText.players.generic}
 						annotation={
-							localPlayer?.name === player1?.name
+							!isLocalSession && localPlayer?.name === player1?.name
 								? uiText.players.you
 								: undefined
 						}
@@ -124,7 +136,7 @@ export function GameScreen() {
 					<PlayerSummary
 						name={player2?.name ?? uiText.players.generic}
 						annotation={
-							localPlayer?.name === player2?.name
+							!isLocalSession && localPlayer?.name === player2?.name
 								? uiText.players.you
 								: undefined
 						}
@@ -149,11 +161,25 @@ export function GameScreen() {
 					<WinnerBanner
 						winnerName={uiText.winners.title(winner.name)}
 						onReturnToLobby={() => returnToRoom()}
-						subtitle={uiText.winners.subtitle}
+						subtitle={
+							isLocalSession
+								? uiText.winners.localSubtitle
+								: uiText.winners.subtitle
+						}
 					/>
 				)}
 
-				{!winner && localPlayer ? (
+				{!winner && isLocalSession ? (
+					<div className="text-center text-sm text-white/80">
+						<span className="font-semibold">
+							{uiText.games.localTurn(
+								currentTurnPlayer?.name ?? uiText.players.generic
+							)}
+						</span>
+					</div>
+				) : null}
+
+				{!winner && !isLocalSession && localPlayer ? (
 					<div className="text-center text-sm text-white/80">
 						<span className="font-semibold">Tu color:</span>{' '}
 						{colorLabel(localPlayer.color)}{' '}
